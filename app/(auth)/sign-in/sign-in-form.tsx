@@ -2,7 +2,6 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -18,25 +17,24 @@ import PasswordInput from "@/components/password-input";
 import { CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 
-export default function SignInForm () {
+export default function SignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [isPending, startTransition] = useTransition();
 
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || PATHS.home;
+  const callback = callbackUrl || PATHS.home;
 
-  const form = useForm<SignInData>({
-    resolver: zodResolver(schemaSignIn),
-    defaultValues: defaultSignInValues // Must be defined, otherwise it will complain.
-  })
+   const form = useForm<SignInData>({
+     resolver: zodResolver(schemaSignIn),
+     defaultValues: defaultSignInValues // Must be defined, otherwise it will complain.
+   })
 
-  const onSubmit = (data: SignInData) => {
-    startTransition(async () => {
-      const result = await signInUserWithOptionalCallback(data, callbackUrl);
-      if (result?.error) {
-        form.setError("root", { message: result.error });
-      }
-    })
-  }
+   const onSubmit = (data: SignInData) => {
+     startTransition(async () => {
+      const result = await signInUserWithOptionalCallback(data, callback);
+       if (result?.error) {
+         form.setError("root", { message: result.error });
+       }
+     })
+   }
 
   return (
     <Form {...form}>
