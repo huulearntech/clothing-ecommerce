@@ -204,7 +204,7 @@ export function SearchBarForm({
                     // FIXME: fix render mismatch between server and client due to new Date().
                     disabled={{
                       before: new Date(),
-                      after: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                      after: addDays(new Date(), 30),
                     }}
                   />
                 </FormControl>
@@ -339,6 +339,7 @@ type Location = {
 // TODO: This has reduced rerender compared to the original. But still rerender a lot. One keystroke causes 3 renders.
 // NOTE: BaseUI will close when the query is empty. We want to show default suggestions in that case
 import { user_getDefaultSearchBarLocations } from "@/lib/actions/search-bar";
+import { addDays } from "date-fns";
 function LocationAutocomplete({
   query,
   setQuery,

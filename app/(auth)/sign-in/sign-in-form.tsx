@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { PATHS } from "@/lib/constants";
 import { schemaSignIn, SignInData, defaultSignInValues } from "@/lib/zod_schemas/auth";
-import { signInUserWithOptionalCallback } from "@/lib/actions/auth"
+import { signInUser } from "@/lib/actions/auth"
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ export default function SignInForm({ callbackUrl }: { callbackUrl: string }) {
 
    const onSubmit = (data: SignInData) => {
      startTransition(async () => {
-      const result = await signInUserWithOptionalCallback(data, callback);
+       const result = await signInUser(data, callback);
        if (result?.error) {
          form.setError("root", { message: result.error });
        }

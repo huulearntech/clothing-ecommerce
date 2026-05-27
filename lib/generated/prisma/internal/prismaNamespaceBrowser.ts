@@ -126,6 +126,7 @@ export type WardScalarFieldEnum = (typeof WardScalarFieldEnum)[keyof typeof Ward
 export const BookingScalarFieldEnum = {
   id: 'id',
   status: 'status',
+  vnpayUrl: 'vnpayUrl',
   userId: 'userId',
   roomTypeId: 'roomTypeId',
   checkInDate: 'checkInDate',

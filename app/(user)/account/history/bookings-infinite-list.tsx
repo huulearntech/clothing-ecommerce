@@ -20,6 +20,7 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
+import Link from "next/link";
 
 
 function StatusBadge({ status }: { status: BookingStatus }) {
@@ -28,21 +29,17 @@ function StatusBadge({ status }: { status: BookingStatus }) {
 }
 
 const fmtCurrency = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format;
-const fmtDate = (d?: string | Date | null) => {
-  if (!d) return "—";
-  const dt = typeof d === "string" ? new Date(d) : d;
-  return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(dt);
+const fmtDate = (d: Date) => {
+  return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
 };
-const fmtDateTime = (d?: string | Date | null) => {
-  if (!d) return "—";
-  const dt = typeof d === "string" ? new Date(d) : d;
+const fmtDateTime = (d: Date) => {
   return new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(dt);
+  }).format(d);
 };
 
 function BookingCard({ booking }: { booking: RecentBookingType }) {
@@ -102,21 +99,29 @@ function BookingCard({ booking }: { booking: RecentBookingType }) {
         </div>
       </CardHeader>
 
-      <CardFooter className="text-sm gap-x-4">
-        <div className="flex items-center gap-2">
-          <DoorOpenIcon className="size-4 text-muted-foreground" />
-          <span>{numRooms} phòng</span>
-          <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
-            {snapshotRoomTypeName}
-          </span>
-        </div>
+      <CardFooter className="flex items-center justify-between gap-x-4">
+        <div className="flex text-sm items-center gap-4">
+          <div className="flex items-center gap-2">
+            <DoorOpenIcon className="size-4 text-muted-foreground" />
+            <span>{numRooms} phòng</span>
+            <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
+              {snapshotRoomTypeName}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <UserIcon className="size-4 text-muted-foreground" />
-          <span>
-            {numAdults} người lớn{numChildren ? ` & ${numChildren} trẻ em` : ""}
-          </span>
+          <div className="flex items-center gap-2">
+            <UserIcon className="size-4 text-muted-foreground" />
+            <span>
+              {numAdults} người lớn{numChildren ? ` & ${numChildren} trẻ em` : ""}
+            </span>
+          </div>
         </div>
+        {booking.status === "PENDING_TO_PAY" && booking.vnpayUrl && (
+          <Link href={booking.vnpayUrl} target="_blank" className="text-sm font-medium text-primary flex items-center gap-x-1">
+            Thanh toán
+            <ArrowRightIcon className="size-4" />
+          </Link>
+        )}
       </CardFooter>
     </Card>
   );
@@ -203,7 +208,7 @@ export default function BookingsInfiniteScrollList() {
           <ToggleGroup
             type="single"
             value={status}
-            onValueChange={(value) => setStatus(value as BookingStatus)}
+            onValueChange={(value) => value && setStatus(value as BookingStatus)}
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:px-4! md:flex"
           >

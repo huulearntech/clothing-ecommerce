@@ -1,3 +1,4 @@
+import { addDays } from "date-fns";
 import { type BookingStatus } from "./generated/prisma/enums";
 import { type SearchBar_FormOutput } from "@/lib/zod_schemas/search-bar";
 
@@ -20,7 +21,7 @@ export const MAX_LOCATION_AUTOCOMPLETE_RESULTS = 10;
 export const MAX_OTP_ATTEMPTS = 5;
 export const MIN_RESEND_OTP_MS = 180_000; // don't allow resending more than once per 3 minutes
 
-export const DEFAULT_PAGE_SIZE = 20;
+export const DEFAULT_PAGE_SIZE = 25;
 
 export const CACHE_TAGS = {
   userInfo: "user_info",
@@ -43,6 +44,7 @@ export const PATHS = {
 
   hotelDashboard: '/dashboard',
   hotelRooms: '/dashboard/rooms',
+  hotelRoomTypes: '/dashboard/room-types',
   hotelStatistics: '/dashboard/analytics',
   hotelBookings: '/dashboard/bookings',
   hotelReviews: '/dashboard/reviews',
@@ -74,7 +76,7 @@ export const DEFAULT_SEARCH_BAR_VALUES: SearchBar_FormOutput = {
   },
   inOutDates: {
     from: new Date(),
-    to: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    to: addDays(new Date(), 1)
   },
   guestsAndRooms: {
     numAdults: 2,

@@ -30,6 +30,7 @@ export async function createBookingThenRedirectToVNPay(
   notes: string | undefined,
 ) {
   try {
+    console.log("bla")
     const session = await auth();
     if (!session || session.user.role !== "USER") {
       throw new Error("Unauthorized");
@@ -80,7 +81,7 @@ export async function createBookingThenRedirectToVNPay(
     });
 
     if (userHasAnotherPendingBooking) {
-      throw new Error("You have another pending booking. Please complete or cancel it before creating a new one.");
+      throw new Error("Bạn có một đơn đặt phòng đang chờ thanh toán. Vui lòng hoàn tất thanh toán hoặc hủy đơn đó trước khi tạo đơn mới.");
     }
 
     const roomType = await prisma.roomType.findUnique({
@@ -165,9 +166,17 @@ export async function createBookingThenRedirectToVNPay(
       vnp_TxnRef: createdBooking.id,
     });
 
+    await prisma.booking.update({
+      where: { id: createdBooking.id },
+      data: {
+        vnpayUrl: paymentUrl,
+      },
+    });
+
     // Redirect to VNPay
     // Note: redirect() in Server Actions throws a NEXT_REDIRECT error which is expected behavior
-    redirect(paymentUrl);
+    // redirect(paymentUrl);
+    redirect('/payment/return')
   } catch (error) {
     // Check if this is a Next.js redirect (expected behavior)
     const isRedirect = error instanceof Error && (

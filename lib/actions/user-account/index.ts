@@ -6,12 +6,12 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { type OperationResult } from "@/lib/types/utils";
 import { UserUpdateNameData, userUpdateNameSchema } from "@/lib/zod_schemas/auth";
-import { CACHE_TAGS, PATHS } from "@/lib/constants";
+import { CACHE_TAGS, DEFAULT_PAGE_SIZE, PATHS } from "@/lib/constants";
 import { BookingStatus } from "@/lib/generated/prisma/enums";
 
 export async function user_getRecentBookings(
   lastCursor: string | null = null,
-  limit: number = 10,
+  limit: number = DEFAULT_PAGE_SIZE,
   status: BookingStatus = "PENDING_TO_PAY",
 ) {
   const session = await auth();
@@ -64,6 +64,7 @@ export async function user_getRecentBookings(
       snapshotRoomPrice: true,
       status: true,
       createdAt: true,
+      vnpayUrl: true,
     }
   });
 

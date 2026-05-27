@@ -32,6 +32,29 @@ export default function PriceDetail({
   snapshotRoomTypeName: string;
 }) {
   const { handleSubmit } = useInformationForm();
+  const onSubmit = handleSubmit(async (form) => {
+    try {
+      await createBookingThenRedirectToVNPay(
+        roomTypeId,
+        checkInDate,
+        checkOutDate,
+        numAdults,
+        numChildren,
+        numRooms,
+        snapshotRoomPrice,
+        form.name,
+        form.email,
+        form.phone,
+        form.notes,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Có lỗi xảy ra. Vui lòng thử lại.";
+      if (typeof message === "string" && message.includes("NEXT_REDIRECT")) {
+        return;
+      }
+      toast.error(message);
+    }
+  });
 
   return (
     <div className="flex flex-col rounded-4xl bg-white shadow-lg">
@@ -80,25 +103,7 @@ export default function PriceDetail({
 
       <Button
         className="m-4 rounded-full h-12 font-semibold"
-        onClick={() => {
-          try {
-            handleSubmit((form) => createBookingThenRedirectToVNPay(
-              roomTypeId,
-              checkInDate,
-              checkOutDate,
-              numAdults,
-              numChildren,
-              numRooms,
-              snapshotRoomPrice,
-              form.name,
-              form.email,
-              form.phone,
-              form.notes,
-            ));
-          } catch (error) {
-            toast.error((error as Error).message || "Đã có lỗi xảy ra. Vui lòng thử lại.");
-          }
-        }}
+        onClick={onSubmit}
       >
         Tiếp tục
       </Button>
