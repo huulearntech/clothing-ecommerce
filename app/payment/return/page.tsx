@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { vnpay } from "@/lib/vnpay";
 import { type VerifyReturnUrl, parseDate } from "vnpay";
+import { verifyReturnUrl } from "@/lib/vnpay";
 import Link from "next/link";
 import { PrintButton } from "./button-print";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { PATHS } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 interface PaymentReturnProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, string | string[]>>;
 }
 
 function PaymentResultSkeleton() {
@@ -42,7 +43,7 @@ async function PaymentResult({ searchParams }: PaymentReturnProps) {
     const params = await searchParams;
 
     // Verify the return URL
-    const verify = vnpay.verifyReturnUrl(params as unknown as VerifyReturnUrl);
+    const verify = verifyReturnUrl(params);
 
     const isSuccess = verify.isVerified && verify.isSuccess;
     const Icon = isSuccess ? CheckCircleIcon : XCircleIcon;

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { vnpay } from "@/lib/vnpay";
+// import { vnpay } from "@/lib/vnpay";
+
+import { verifyIpn } from "@/lib/vnpay";
 
 // Typo? Lmao. Inp -> Ipn
 import {
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
     const queryParams = Object.fromEntries(searchParams.entries());
 
     // Verify the IPN call
-    const verify = vnpay.verifyIpnCall(queryParams as unknown as VerifyIpnCall);
+    const verify = verifyIpn(queryParams);
 
     // Check if the verification is successful
     if (!verify.isVerified) {

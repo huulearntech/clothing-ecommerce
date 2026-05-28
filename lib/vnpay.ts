@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { VNPay, HashAlgorithm } from "vnpay";
-import { headers } from "next/headers";
 import moment from "moment";
 import crypto from "crypto";
 import qs from "qs";
@@ -63,17 +62,94 @@ export function createVnpayUrl(
   return paymentUrl;
 };
 
+export function verifyReturnUrl(params: Record<string, string | string[]>): {
+  isVerified: boolean;
+  isSuccess: boolean;
+  vnp_TxnRef: string;
+  vnp_PayDate: string;
+  vnp_Amount: number;
+  vnp_OrderInfo: string;
+  vnp_TransactionNo: string;
+  vnp_BankCode: string;
+  message: string;
+} {
+  const secureHash = params['vnp_SecureHash'] as string;
+  const hashType = params['vnp_SecureHashType'] as string;
 
-function getClientIP (headers: Headers): string {
-  const forwardedFor = headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
+  // Loại bỏ các tham số không cần thiết
+  const filteredParams: Record<string, string> = {};
+  for (const key in params) {
+    if (key.startsWith('vnp_') && key !== 'vnp_SecureHash' && key !== 'vnp_SecureHashType') {
+      filteredParams[key] = params[key] as string;
+    }
   }
 
-  const realIP = headers.get("x-real-ip");
-  const clientIP = headers.get("x-client-ip");
-  return realIP || clientIP || "127.0.0.1";
-};
+  const sortedParams = sortObject(filteredParams);
+  const signData = qs.stringify(sortedParams, { encode: false });
+
+  const hmac = crypto.createHmac(hashType === 'SHA256' ? 'sha256' : 'sha512', vnpayConfig.secureSecret);
+  const signed = hmac.update(signData).digest('hex');
+
+  const isVerified = signed === secureHash;
+  const isSuccess = params['vnp_ResponseCode'] === '00';
+  const vnp_PayDate = params['vnp_PayDate'] as string;
+  const vnp_TxnRef = params['vnp_TxnRef'] as string;
+  const vnp_Amount = /d+/.test(params['vnp_Amount'] as string) ? parseInt(params['vnp_Amount'] as string, 10) : NaN;
+  const vnp_OrderInfo = params['vnp_OrderInfo'] as string;
+  const vnp_TransactionNo = params['vnp_TransactionNo'] as string;
+  const vnp_BankCode = params['vnp_BankCode'] as string;
+  const message = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại";
+
+  return {
+    isVerified,
+    isSuccess,
+    vnp_PayDate,
+    vnp_TxnRef,
+    vnp_Amount,
+    vnp_OrderInfo,
+    vnp_TransactionNo,
+    vnp_BankCode,
+    message,
+  };
+}
+
+export function verifyIpn(params: Record<string, string | string[]>): {
+  isVerified: boolean;
+  isSuccess: boolean;
+  vnp_TxnRef: string;
+  vnp_Amount: number;
+} {
+  const secureHash = params['vnp_SecureHash'] as string;
+  const hashType = params['vnp_SecureHashType'] as string;
+
+  // Loại bỏ các tham số không cần thiết
+  const filteredParams: Record<string, string> = {};
+  for (const key in params) {
+    if (key.startsWith('vnp_') && key !== 'vnp_SecureHash' && key !== 'vnp_SecureHashType') {
+      filteredParams[key] = params[key] as string;
+    }
+  }
+
+  const sortedParams = sortObject(filteredParams);
+  const signData = qs.stringify(sortedParams, { encode: false });
+
+  const hmac = crypto.createHmac(hashType === 'SHA256' ? 'sha256' : 'sha512', vnpayConfig.secureSecret);
+  const signed = hmac.update(signData).digest('hex');
+
+  const isVerified = signed === secureHash;
+  const isSuccess = params['vnp_ResponseCode'] === '00';
+  const vnp_TxnRef = params['vnp_TxnRef'] as string;
+  const vnp_Amount = /d+/.test(params['vnp_Amount'] as string) ? parseInt(params['vnp_Amount'] as string, 10) : NaN;
+
+  return {
+    isVerified,
+    isSuccess,
+    vnp_TxnRef,
+    vnp_Amount,
+  };
+}
+
+// Helper function to sort object keys and encode values
 const sortObject = <T extends Record<string, string | number>>(obj: T): Record<string, string> => {
   const sorted: Record<string, string> = {};
   const keys = Object.keys(obj).sort();
