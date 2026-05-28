@@ -289,6 +289,8 @@ async function sendOtpToEmail(name: string, email: string, otpCode: string) {
   if (process.env.NODE_ENV === "development") {
     console.log(`Development mode: OTP for ${email} is ${otpCode}`);
     return;
+  } else {
+    console.log("Production mode: Sending OTP email...");
   }
   
   if (!email) {

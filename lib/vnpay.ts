@@ -94,7 +94,10 @@ export function verifyReturnUrl(params: Record<string, string | string[]>): {
   const isSuccess = params['vnp_ResponseCode'] === '00';
   const vnp_PayDate = params['vnp_PayDate'] as string;
   const vnp_TxnRef = params['vnp_TxnRef'] as string;
-  const vnp_Amount = /d+/.test(params['vnp_Amount'] as string) ? parseInt(params['vnp_Amount'] as string, 10) : NaN;
+  // VNPAY gửi về số tiền đã nhân 100, nên cần chia lại cho đúng
+  const vnp_Amount = /^\d+$/.test(params['vnp_Amount'] as string)
+    ? parseInt(params['vnp_Amount'] as string, 10) / 100
+    : NaN;
   const vnp_OrderInfo = params['vnp_OrderInfo'] as string;
   const vnp_TransactionNo = params['vnp_TransactionNo'] as string;
   const vnp_BankCode = params['vnp_BankCode'] as string;
@@ -139,7 +142,10 @@ export function verifyIpn(params: Record<string, string | string[]>): {
   const isVerified = signed === secureHash;
   const isSuccess = params['vnp_ResponseCode'] === '00';
   const vnp_TxnRef = params['vnp_TxnRef'] as string;
-  const vnp_Amount = /d+/.test(params['vnp_Amount'] as string) ? parseInt(params['vnp_Amount'] as string, 10) : NaN;
+  // VNPAY gửi về số tiền đã nhân 100, nên cần chia lại cho đúng
+  const vnp_Amount = /^\d+$/.test(params['vnp_Amount'] as string)
+    ? parseInt(params['vnp_Amount'] as string, 10) / 100
+    : NaN;
 
   return {
     isVerified,
