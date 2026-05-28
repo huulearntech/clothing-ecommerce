@@ -155,20 +155,25 @@ export async function createBookingThenRedirectToVNPay(
     const orderInfo = `Order ${createdBooking.id}`;
 
     // Build payment URL
-    const clientIPAddr = await headers().then(getClientIP);
-    const paymentUrl = vnpay.buildPaymentUrl({
-      vnp_Amount: totalPrice,
-      vnp_CreateDate: dateFormat(new Date()),
-      vnp_CurrCode: VnpCurrCode.VND,
-      vnp_IpAddr: clientIPAddr,
-      vnp_Locale: VnpLocale.VN,
-      vnp_OrderInfo: orderInfo,
-      vnp_OrderType: ProductCode.Hotel_Tourism,
-      vnp_ReturnUrl: process.env.VNPAY_RETURN_URL,
-      vnp_TxnRef: createdBooking.id,
-    });
+    const clientIpAddr = await headers().then(getClientIP);
+    // const paymentUrl = vnpay.buildPaymentUrl({
+    //   vnp_Amount: totalPrice,
+    //   vnp_CreateDate: dateFormat(new Date()),
+    //   vnp_CurrCode: VnpCurrCode.VND,
+    //   vnp_IpAddr: clientIpAddr,
+    //   vnp_Locale: VnpLocale.VN,
+    //   vnp_OrderInfo: orderInfo,
+    //   vnp_OrderType: ProductCode.Hotel_Tourism,
+    //   vnp_ReturnUrl: process.env.VNPAY_RETURN_URL,
+    //   vnp_TxnRef: createdBooking.id,
+    // });
 
-    // const paymentUrl = await createVnpayUrl(totalPrice, createdBooking.id);
+    const paymentUrl = createVnpayUrl(
+      totalPrice,
+      createdBooking.id,
+      clientIpAddr,
+      orderInfo
+    );
 
     await prisma.booking.update({
       where: { id: createdBooking.id },
