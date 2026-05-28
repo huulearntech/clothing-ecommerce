@@ -73,7 +73,6 @@ export default function OtpForm({ id, email, name }: { id: string, email: string
             type="button"
             variant="outline"
             size="sm"
-            disabled={true}
             onClick={handleResendOtp}
           >
             <RotateCwIcon /> Gửi lại mã sau 

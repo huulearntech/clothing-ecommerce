@@ -175,8 +175,7 @@ export async function createBookingThenRedirectToVNPay(
 
     // Redirect to VNPay
     // Note: redirect() in Server Actions throws a NEXT_REDIRECT error which is expected behavior
-    // redirect(paymentUrl);
-    redirect('/payment/return')
+    redirect(paymentUrl);
   } catch (error) {
     // Check if this is a Next.js redirect (expected behavior)
     const isRedirect = error instanceof Error && (

@@ -32,6 +32,13 @@ async function main() {
   await run("bookings", seedBookings);
   await run("reviews", seedReviews);
 
+  // await run("test cron", async () => fetch("http://localhost:3000/api/cron", {
+  //   method: "GET",
+  //   headers: {
+  //     Authorization: `Bearer ${process.env.CRON_SECRET}`,
+  //   },
+  // }));
+
   // await seedAdmin(); // TODO: later when we have an admin dashboard
 }
 

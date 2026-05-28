@@ -27,14 +27,18 @@ export default function SignInForm({ callbackUrl }: { callbackUrl: string }) {
      defaultValues: defaultSignInValues // Must be defined, otherwise it will complain.
    })
 
-   const onSubmit = (data: SignInData) => {
-     startTransition(async () => {
-       const result = await signInUser(data, callback);
-       if (result?.error) {
-         form.setError("root", { message: result.error });
-       }
-     })
-   }
+  const onSubmit = (data: SignInData) => {
+    startTransition(async () => {
+      try {
+        const result = await signInUser(data, callback);
+        if (result?.error) {
+          form.setError("root", { message: result.error });
+        }
+      } catch (error) {
+        form.setError("root", { message: "Đã có lỗi xảy ra. Vui lòng thử lại." });
+      }
+    })
+  }
 
   return (
     <Form {...form}>

@@ -322,12 +322,6 @@ async function sendOtpToEmail(name: string, email: string, otpCode: string) {
           <p style="margin:0 0 8px 0; color:#555;">
             Mã có hiệu lực trong <strong>5 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.
           </p>
-
-          <hr style="border:none; border-top:1px solid #eee; margin:18px 0;" />
-
-          <p style="margin:0; font-size:12px; color:#999;">
-            Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.
-          </p>
         </div>
       </div>
     `;
@@ -336,7 +330,6 @@ async function sendOtpToEmail(name: string, email: string, otpCode: string) {
     from: process.env.GMAIL_USER,
     to: email,
     subject: `Mã OTP của bạn`,
-    text: `Mã OTP của bạn là ${otpCode}. Mã có hiệu lực trong 5 phút.`,
     html: htmlContent,
   });
 }
