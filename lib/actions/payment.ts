@@ -4,12 +4,12 @@
 import "dotenv/config";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { vnpay } from "@/lib/vnpay";
+import { createVnpayUrl, vnpay } from "@/lib/vnpay";
 import { ProductCode, VnpLocale, VnpCurrCode, dateFormat } from "vnpay";
 
 import { schema_bookingForm } from "../zod_schemas/booking";
 import prisma from "../prisma";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, subMinutes } from "date-fns";
 import { auth } from "@/auth";
 import { user_getRoomTypeInventoryForUpdate } from "../generated/prisma/sql";
 import { schema_searchSpecWithoutLocation, toYYYY_MM_DD } from "../zod_schemas/search-bar";
@@ -30,7 +30,6 @@ export async function createBookingThenRedirectToVNPay(
   notes: string | undefined,
 ) {
   try {
-    console.log("bla")
     const session = await auth();
     if (!session || session.user.role !== "USER") {
       throw new Error("Unauthorized");
@@ -77,6 +76,9 @@ export async function createBookingThenRedirectToVNPay(
       where: {
         userId: session.user.id,
         status: "PENDING_TO_PAY",
+        createdAt: {
+          gte: subMinutes(new Date(), 15), // Only consider bookings created in the last 15 minutes
+        },
       },
     });
 
@@ -150,7 +152,7 @@ export async function createBookingThenRedirectToVNPay(
     });
     
 
-    const orderInfo = `Order ${createdBooking.id}: ${numRooms}x room(s) (${roomTypeId}) from ${toYYYY_MM_DD(checkInDate)} to ${toYYYY_MM_DD(checkOutDate)}, total ${totalPrice} VND`;
+    const orderInfo = `Order ${createdBooking.id}`;
 
     // Build payment URL
     const clientIPAddr = await headers().then(getClientIP);
@@ -165,6 +167,8 @@ export async function createBookingThenRedirectToVNPay(
       vnp_ReturnUrl: process.env.VNPAY_RETURN_URL,
       vnp_TxnRef: createdBooking.id,
     });
+
+    // const paymentUrl = await createVnpayUrl(totalPrice, createdBooking.id);
 
     await prisma.booking.update({
       where: { id: createdBooking.id },

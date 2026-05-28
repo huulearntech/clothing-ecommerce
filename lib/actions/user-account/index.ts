@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, subMinutes } from "date-fns";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { type OperationResult } from "@/lib/types/utils";
@@ -33,8 +33,22 @@ export async function user_getRecentBookings(
     pagination.skip = 1;
   }
 
+  const where =
+    status === "PENDING_TO_PAY"
+      ? {
+          userId: session.user.id,
+          status: BookingStatus.PENDING_TO_PAY,
+          createdAt: {
+            gte: subMinutes(new Date(), 15),
+          },
+        }
+      : {
+          userId: session.user.id,
+          status,
+        };
+
   const bookings = await prisma.booking.findMany({
-    where: { userId: session.user.id, status },
+    where: where,
     orderBy: { createdAt: "desc" },
     ...pagination,
     select: {
