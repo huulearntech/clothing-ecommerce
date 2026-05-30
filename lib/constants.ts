@@ -62,9 +62,10 @@ export const PATHS = {
 export const BOOKING_STATUS_BADGE_COLORS: Record<BookingStatus, { text: string; variant: string }> = {
   PENDING_TO_PAY: { text: "Đang chờ", variant: "bg-yellow-100 text-yellow-800" },
   PAID: { text: "Đã thanh toán", variant: "bg-green-100 text-green-800" },
+  PAYMENT_FAILED: { text: "Thanh toán thất bại", variant: "bg-red-100 text-red-800" },
   CHECKED_IN: { text: "Đã nhận phòng", variant: "bg-sky-100 text-sky-800" },
   CHECKED_OUT: { text: "Đã trả phòng", variant: "bg-sky-100 text-sky-800" },
-  CANCELLED: { text: "Đã huỷ", variant: "bg-red-100 text-red-800" },
+  CANCELLED: { text: "Đã huỷ", variant: "bg-gray-100 text-gray-800" },
 };
 
 

@@ -57,6 +57,7 @@ model Review {
 enum BookingStatus {
   PENDING_TO_PAY
   PAID
+  PAYMENT_FAILED
   CANCELLED
   CHECKED_IN
   CHECKED_OUT

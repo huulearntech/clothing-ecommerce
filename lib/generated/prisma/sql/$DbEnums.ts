@@ -4,7 +4,7 @@
 // biome-ignore-all lint: generated file
 // @ts-nocheck 
 export interface $DbEnums {
-  BookingStatus: "PENDING_TO_PAY" | "PAID" | "CANCELLED" | "CHECKED_IN" | "CHECKED_OUT"
+  BookingStatus: "PENDING_TO_PAY" | "PAID" | "PAYMENT_FAILED" | "CANCELLED" | "CHECKED_IN" | "CHECKED_OUT"
   HotelType: "HOTEL" | "MOTEL" | "RESORT" | "APARTMENT" | "HOSTEL"
   HotelStatus: "PENDING_APPROVAL" | "REJECTED" | "ACTIVE" | "INACTIVE" | "SUSPENDED"
   FacilityType: "HOTEL_SERVICES" | "FOOD_AND_DRINK" | "PUBLIC" | "IN_ROOM" | "ACCESSIBILITY" | "OTHER"

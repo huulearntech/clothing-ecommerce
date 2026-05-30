@@ -286,25 +286,45 @@ function generateOTP() {
 }
 
 async function sendOtpToEmail(name: string, email: string, otpCode: string) {
+  console.log("sendOtpToEmail called", {
+    NODE_ENV: process.env.NODE_ENV,
+    email,
+    hasGmailUser: !!process.env.GMAIL_USER,
+    hasGmailPass: !!process.env.GMAIL_PASS,
+  });
+
   if (process.env.NODE_ENV === "development") {
     console.log(`Development mode: OTP for ${email} is ${otpCode}`);
     return;
   } else {
-    console.log("Production mode: Sending OTP email...");
+    console.log("Production mode: Attempting to send OTP email");
   }
-  
+
   if (!email) {
+    console.error("Missing recipient email");
     throw new Error("Recipient email must be provided to send OTP.");
   }
 
   if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    console.error("Missing Gmail credentials", {
+      gmailUserSet: !!process.env.GMAIL_USER,
+      gmailPassSet: !!process.env.GMAIL_PASS,
+    });
     throw new Error("GMAIL_USER and GMAIL_PASS must be set in environment variables to send OTP emails");
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
   });
+
+  try {
+    await transporter.verify();
+    console.log("Nodemailer transporter verified");
+  } catch (verifyError) {
+    console.error("Nodemailer verify failed", verifyError);
+    throw verifyError;
+  }
 
   const htmlContent = `
       <div style="font-family: Arial, sans-serif; background:#f6f9fc; padding:24px;">
@@ -328,12 +348,18 @@ async function sendOtpToEmail(name: string, email: string, otpCode: string) {
       </div>
     `;
 
-  await transporter.sendMail({
-    from: process.env.GMAIL_USER,
-    to: email,
-    subject: `Mã OTP của bạn`,
-    html: htmlContent,
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: email,
+      subject: `Mã OTP của bạn`,
+      html: htmlContent,
+    });
+    console.log("OTP email sent", { email, messageId: info.messageId });
+  } catch (sendError) {
+    console.error("Failed to send OTP email", sendError);
+    throw sendError;
+  }
 }
 
 export async function resendOtpToEmail(referenceId: string, verificationType: VerificationType) {
