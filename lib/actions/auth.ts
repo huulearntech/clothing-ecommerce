@@ -7,10 +7,10 @@ import bcrypt from "bcrypt";
 import prisma from "@/lib/prisma";
 import { randomInt } from "crypto";
 import { addMinutes } from "date-fns";
-import nodemailer from "nodemailer";
 
 
 import { Prisma, VerificationType } from "@/lib/generated/prisma/client";
+import { sendOtpToEmail } from "@/lib/mailgun";
 import { SignUpData, SignInData, schemaSignUp, schemaSignIn } from "@/lib/zod_schemas/auth";
 import { MAX_OTP_ATTEMPTS, MIN_RESEND_OTP_MS, PATHS } from "../constants";
 import { redirect } from "next/navigation";
@@ -56,14 +56,8 @@ export async function signUpUser(userData: SignUpData, isSigningUpForHotelOwner 
     };
   }
 
-  const isDevelopment = process.env.NODE_ENV === "development";
-  let hashedPassword = safeParsedUserData.data.password;
-  if (isDevelopment) {
-    console.warn("Running in development mode, storing password in plaintext. DO NOT USE THIS IN PRODUCTION!");
-  } else {
-    const saltRounds = 10;
-    hashedPassword = await bcrypt.hash(safeParsedUserData.data.password, saltRounds);
-  }
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(safeParsedUserData.data.password, saltRounds);
 
   const otpCode = generateOTP();
   const role = isSigningUpForHotelOwner ? "HOTEL_OWNER" : "USER";
@@ -94,7 +88,11 @@ export async function signUpUser(userData: SignUpData, isSigningUpForHotelOwner 
       return { verificationId: verification.id };
     });
 
-    await sendOtpToEmail(safeParsedUserData.data.name, safeParsedUserData.data.email, otpCode);
+    await sendOtpToEmail({
+      email: safeParsedUserData.data.email,
+      name: safeParsedUserData.data.name,
+      otpCode: otpCode
+    });
 
     return {
       success: true,
@@ -144,12 +142,7 @@ export async function signInUser(
   });
 
   if (user) {
-  // FIXME: Remove this on production
-  const isDevelopment = process.env.NODE_ENV === "development";
-
-  let passwordMatch = false;
-  if (isDevelopment) passwordMatch = (password === user.password);
-  else passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
   if (!passwordMatch) return { error: "Thông tin đăng nhập không chính xác!" };
   const lastToken = await prisma.verificationToken.findFirst({
@@ -177,7 +170,11 @@ export async function signInUser(
         select: { id: true },
       });
 
-      await sendOtpToEmail(user.name, email, otpCode);
+      await sendOtpToEmail({
+        email: email,
+        name: user.name,
+        otpCode: otpCode
+      });
       redirect(`${PATHS.otp}/${newToken.id}`);
     }
   } else try {
@@ -285,82 +282,6 @@ function generateOTP() {
   return otp;
 }
 
-async function sendOtpToEmail(name: string, email: string, otpCode: string) {
-  console.log("sendOtpToEmail called", {
-    NODE_ENV: process.env.NODE_ENV,
-    email,
-    hasGmailUser: !!process.env.GMAIL_USER,
-    hasGmailPass: !!process.env.GMAIL_PASS,
-  });
-
-  if (process.env.NODE_ENV === "development") {
-    console.log(`Development mode: OTP for ${email} is ${otpCode}`);
-    return;
-  } else {
-    console.log("Production mode: Attempting to send OTP email");
-  }
-
-  if (!email) {
-    console.error("Missing recipient email");
-    throw new Error("Recipient email must be provided to send OTP.");
-  }
-
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-    console.error("Missing Gmail credentials", {
-      gmailUserSet: !!process.env.GMAIL_USER,
-      gmailPassSet: !!process.env.GMAIL_PASS,
-    });
-    throw new Error("GMAIL_USER and GMAIL_PASS must be set in environment variables to send OTP emails");
-  }
-
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
-  });
-
-  try {
-    await transporter.verify();
-    console.log("Nodemailer transporter verified");
-  } catch (verifyError) {
-    console.error("Nodemailer verify failed", verifyError);
-    throw verifyError;
-  }
-
-  const htmlContent = `
-      <div style="font-family: Arial, sans-serif; background:#f6f9fc; padding:24px;">
-        <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:8px; padding:24px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
-          <h2 style="margin:0 0 8px 0; color:#333;">Mã xác thực (OTP)</h2>
-          <p style="margin:0 0 16px 0; color:#555;">
-            Xin chào ${name || 'khách hàng'},<br />
-            Hệ thống đã gửi cho bạn mã OTP gồm 6 chữ số để xác thực.
-          </p>
-
-          <div style="display:flex; align-items:center; justify-content:center; margin:18px 0;">
-            <span style="font-size:28px; letter-spacing:4px; font-weight:700; background:#f1f5f9; padding:12px 20px; border-radius:6px; color:#111;">
-              ${otpCode}
-            </span>
-          </div>
-
-          <p style="margin:0 0 8px 0; color:#555;">
-            Mã có hiệu lực trong <strong>5 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.
-          </p>
-        </div>
-      </div>
-    `;
-
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to: email,
-      subject: `Mã OTP của bạn`,
-      html: htmlContent,
-    });
-    console.log("OTP email sent", { email, messageId: info.messageId });
-  } catch (sendError) {
-    console.error("Failed to send OTP email", sendError);
-    throw sendError;
-  }
-}
 
 export async function resendOtpToEmail(referenceId: string, verificationType: VerificationType) {
   const existingToken = await prisma.verificationToken.findFirst({
@@ -409,7 +330,11 @@ export async function resendOtpToEmail(referenceId: string, verificationType: Ve
   });
 
   try {
-    await sendOtpToEmail(existingToken.user.name, existingToken.user.email, newOtpCode);
+    await sendOtpToEmail({
+      email: existingToken.user.email,
+      name: existingToken.user.name,
+      otpCode: newOtpCode
+    });
     return { success: true, data: created };
   } catch (sendErr) {
     // rollback DB changes if sending failed so the attempt isn't consumed
