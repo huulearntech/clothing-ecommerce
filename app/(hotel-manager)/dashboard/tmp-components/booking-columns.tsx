@@ -171,7 +171,7 @@ function CheckInDialog({ booking }: { booking: BookingRow }) {
     refetch,
   } = useQuery({
     queryKey: ["availableRoomsForBooking", booking.id],
-    queryFn: () => hotelowner_getAvailableRoomsForBooking(booking.id),
+    queryFn: async () => { return await hotelowner_getAvailableRoomsForBooking(booking.id) },
     enabled: Boolean(booking.id),
     staleTime: 1000 * 60 * 5,
     retry: 1,
