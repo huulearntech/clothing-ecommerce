@@ -9,7 +9,7 @@ import * as $runtime from "@prisma/client/runtime/client"
  * @param searchString - The string to search for in location names.
  * @param similarityThreshold
  */
-export const getLocationsOrHotelsByString = $runtime.makeTypedQueryFactory("WITH locations AS (\nSELECT * FROM (\nSELECT id, name, 'hotel' AS type,\nsimilarity(unaccent(lower(name)), unaccent(lower($1))) AS sim\nFROM hotels\nWHERE name IS NOT NULL AND name <> ''\nORDER BY sim DESC\nLIMIT 10\n) t\nUNION ALL\nSELECT * FROM (\nSELECT id, name, 'province' AS type,\nsimilarity(unaccent(lower(name)), unaccent(lower($1))) AS sim\nFROM provinces\nWHERE name IS NOT NULL AND name <> ''\nORDER BY sim DESC\nLIMIT 10\n) t\nUNION ALL\nSELECT * FROM (\nSELECT id, name, 'ward' AS type,\nsimilarity(unaccent(lower(name)), unaccent(lower($1))) AS sim\nFROM wards\nWHERE name IS NOT NULL AND name <> ''\nORDER BY sim DESC\nLIMIT 10\n) t\n)\nSELECT id, name, type\nFROM locations\nWHERE sim >= COALESCE($2::double precision, 0.2)\nORDER BY sim DESC, name\nLIMIT 10;") as (searchString: string, similarityThreshold: number) => $runtime.TypedSql<getLocationsOrHotelsByString.Parameters, getLocationsOrHotelsByString.Result>
+export const getLocationsOrHotelsByString = $runtime.makeTypedQueryFactory("WITH locations AS (\nSELECT * FROM (\nSELECT\nh.id,\nh.name,\n'hotel' AS type,\nw.name AS ward_name,\np.name AS province_name,\nsimilarity(unaccent(lower(h.name)), unaccent(lower($1))) AS sim\nFROM hotels h\nLEFT JOIN wards w ON w.id = h.ward_id\nLEFT JOIN provinces p ON p.id = w.province_id\nWHERE h.name IS NOT NULL AND h.name <> ''\nORDER BY sim DESC\nLIMIT 10\n) t\nUNION ALL\nSELECT * FROM (\nSELECT\np.id,\np.name,\n'province' AS type,\nNULL::text AS ward_name,\nNULL::text AS province_name,\nsimilarity(unaccent(lower(p.name)), unaccent(lower($1))) AS sim\nFROM provinces p\nWHERE p.name IS NOT NULL AND p.name <> ''\nORDER BY sim DESC\nLIMIT 10\n) t\nUNION ALL\nSELECT * FROM (\nSELECT\nw.id,\nw.name,\n'ward' AS type,\nNULL::text AS ward_name,\np.name AS province_name,\nsimilarity(unaccent(lower(w.name)), unaccent(lower($1))) AS sim\nFROM wards w\nLEFT JOIN provinces p ON p.id = w.province_id\nWHERE w.name IS NOT NULL AND w.name <> ''\nORDER BY sim DESC\nLIMIT 10\n) t\n)\nSELECT id, name, type, ward_name, province_name\nFROM locations\nWHERE sim >= COALESCE($2::double precision, 0.2)\nORDER BY sim DESC, name\nLIMIT 10;") as (searchString: string, similarityThreshold: number) => $runtime.TypedSql<getLocationsOrHotelsByString.Parameters, getLocationsOrHotelsByString.Result>
 
 export namespace getLocationsOrHotelsByString {
   export type Parameters = [searchString: string, similarityThreshold: number]
@@ -17,5 +17,7 @@ export namespace getLocationsOrHotelsByString {
     id: string | null
     name: string | null
     type: string | null
+    ward_name: string | null
+    province_name: string | null
   }
 }

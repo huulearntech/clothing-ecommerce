@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     // Check if order exists
     if (!booking || verify.vnp_TxnRef !== booking.id) {
-      updateBookingStatus(verify.vnp_TxnRef, "PAYMENT_FAILED");
+      // updateBookingStatus(verify.vnp_TxnRef, "PAYMENT_FAILED");
       return NextResponse.json(IpnOrderNotFound);
     }
 

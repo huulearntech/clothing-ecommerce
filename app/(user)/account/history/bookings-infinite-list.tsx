@@ -275,7 +275,7 @@ function BookingCard({ booking }: { booking: RecentBookingType }) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Hủy đơn đặt phòng</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Bạn có chắc muốn hủy đơn đặt phòng này? Hành động này sẽ hủy đơn và không thể hoàn tác.
+                    Bạn có chắc muốn hủy đơn đặt phòng này? Hành động này sẽ không thể hoàn tác.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="mt-4 flex justify-end gap-2">

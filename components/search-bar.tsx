@@ -407,10 +407,10 @@ function LocationAutocomplete({
   };
 
   return (
-    <Autocomplete<{ id: string; type: SearchBar_LocationType; name: string }>
+    <Autocomplete
       open={isOpen}
       onOpenChange={setIsOpen}
-      items={data as { id: string; type: SearchBar_LocationType; name: string }[]}
+      items={data as { id: string; type: SearchBar_LocationType; name: string, ward_name: string | null, province_name: string | null }[]}
       filter={null}
       limit={MAX_LOCATION_AUTOCOMPLETE_RESULTS}
       itemToStringValue={item => item.name}
@@ -482,15 +482,22 @@ function LocationAutocomplete({
               <AutocompleteItem
                 key={`${item.type}::${item.id}`}
                 value={item}
-                className="h-9"
+                className="h-12 flex justify-between items-center px-4"
                 onClick={() => {
                   onValueChange({ id: item.id, type: item.type as SearchBar_LocationType });
                   // close when an item is selected
                   setIsOpen(false);
                 }}
               >
-                {item.name}
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-accent text-primary py-0.5 px-2 rounded-full">
+                <div className="flex flex-col gap-y-1">
+                  <span className="font-semibold truncate">
+                    {item.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {[item.ward_name, item.province_name].filter(Boolean).join(", ")}
+                  </span>
+                </div>
+                <span className="text-xs bg-accent text-primary rounded-full px-2 py-1">
                   {item.type === "hotel" ? "Khách sạn" : item.type === "province" ? "Tỉnh/Thành phố" : item.type === "ward" ? "Phường/Xã" : ""}
                 </span>
               </AutocompleteItem>
