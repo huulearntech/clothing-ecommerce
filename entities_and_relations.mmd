@@ -1,0 +1,257 @@
+erDiagram
+    USER {
+        uuid id PK
+        string email UK
+        string password_hash
+        string first_name
+        string last_name
+        string phone
+        string role
+        boolean is_active
+        timestamp created_at
+    }
+
+    ADDRESS {
+        uuid id PK
+        uuid user_id FK
+        string address_type
+        string recipient_name
+        string street_line1
+        string street_line2
+        string city
+        string state_province
+        string postal_code
+        string country
+        boolean is_default
+    }
+
+    CUSTOMER_PROFILE {
+        uuid id PK
+        uuid user_id FK,UK
+        string gender_preference
+        string preferred_top_size
+        string preferred_bottom_size
+        string preferred_shoe_size
+        boolean newsletter_subscribed
+    }
+
+    BRAND {
+        uuid id PK
+        string name
+        string slug UK
+        string logo_url
+        text description
+    }
+
+    CATEGORY {
+        uuid id PK
+        uuid parent_id FK
+        string name
+        string slug
+    }
+
+    COLLECTION {
+        uuid id PK
+        string name
+        string season
+        boolean is_active
+    }
+
+    PRODUCT {
+        uuid id PK
+        uuid brand_id FK
+        string name
+        string slug UK
+        decimal base_price
+        text description
+        string material_composition
+        text care_instructions
+        string gender
+        boolean is_published
+    }
+
+    PRODUCT_CATEGORY {
+        uuid product_id PK,FK
+        uuid category_id PK,FK
+    }
+
+    PRODUCT_COLLECTION {
+        uuid product_id PK,FK
+        uuid collection_id PK,FK
+    }
+
+    PRODUCT_VARIANT {
+        uuid id PK
+        uuid product_id FK
+        string sku UK
+        string size
+        string color_name
+        string color_hex
+        decimal price_override
+        int stock_quantity
+        int weight_grams
+    }
+
+    PRODUCT_IMAGE {
+        uuid id PK
+        uuid product_id FK
+        uuid variant_id FK
+        string image_url
+        string alt_text
+        int display_order
+        boolean is_thumbnail
+    }
+
+    WISHLIST {
+        uuid id PK
+        uuid user_id FK
+        string name
+    }
+
+    WISHLIST_ITEM {
+        uuid id PK
+        uuid wishlist_id FK
+        uuid product_id FK
+        uuid variant_id FK
+    }
+
+    CART {
+        uuid id PK
+        uuid user_id FK
+        string session_token UK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CART_ITEM {
+        uuid id PK
+        uuid cart_id FK
+        uuid variant_id FK
+        int quantity
+    }
+
+    VOUCHER {
+        uuid id PK
+        string code UK
+        string discount_type
+        decimal value
+        decimal min_spend
+        int usage_limit
+        timestamp expires_at
+    }
+
+    ORDER {
+        uuid id PK
+        string order_number UK
+        uuid user_id FK
+        uuid voucher_id FK
+        string status
+        decimal subtotal_amount
+        decimal discount_amount
+        decimal shipping_fee
+        decimal tax_amount
+        decimal total_amount
+        json shipping_address_snapshot
+        json billing_address_snapshot
+        timestamp created_at
+    }
+
+    ORDER_ITEM {
+        uuid id PK
+        uuid order_id FK
+        uuid variant_id FK
+        string product_name_snapshot
+        string sku_snapshot
+        string size_snapshot
+        string color_snapshot
+        decimal unit_price
+        int quantity
+        decimal total_price
+    }
+
+    PAYMENT {
+        uuid id PK
+        uuid order_id FK
+        string payment_gateway
+        string transaction_id
+        string status
+        decimal amount
+        timestamp paid_at
+    }
+
+    SHIPMENT {
+        uuid id PK
+        uuid order_id FK
+        string carrier
+        string tracking_number
+        string status
+        timestamp shipped_at
+    }
+
+    REVIEW {
+        uuid id PK
+        uuid product_id FK
+        uuid user_id FK
+        int rating
+        string title
+        text comment
+        string fit_feedback
+        boolean is_verified_purchase
+        timestamp created_at
+    }
+
+    RETURN_REQUEST {
+        uuid id PK
+        uuid order_id FK
+        uuid user_id FK
+        string status
+        decimal refund_amount
+        timestamp created_at
+    }
+
+    RETURN_ITEM {
+        uuid id PK
+        uuid return_request_id FK
+        uuid order_item_id FK
+        uuid exchange_variant_id FK
+        string reason
+        string condition
+        int quantity
+    }
+
+    USER ||--o{ ADDRESS : "has many"
+    USER ||--o| CUSTOMER_PROFILE : "has one"
+    USER ||--o{ ORDER : "places many"
+    USER ||--o{ REVIEW : "writes many"
+    USER ||--o{ WISHLIST : "owns many"
+    USER ||--o| CART : "owns one"
+
+    WISHLIST ||--o{ WISHLIST_ITEM : "contains"
+    PRODUCT ||--o{ WISHLIST_ITEM : "saved in"
+    PRODUCT_VARIANT ||--o{ WISHLIST_ITEM : "optionally targets"
+
+    BRAND ||--o{ PRODUCT : "manufactures"
+    CATEGORY ||--o{ CATEGORY : "parent of"
+    CATEGORY ||--o{ PRODUCT_CATEGORY : "categorizes"
+    PRODUCT ||--o{ PRODUCT_CATEGORY : "belongs to"
+    
+    PRODUCT ||--o{ PRODUCT_VARIANT : "has variants"
+    PRODUCT ||--o{ PRODUCT_IMAGE : "has images"
+    PRODUCT_VARIANT ||--o{ PRODUCT_IMAGE : "optionally owns image"
+    PRODUCT ||--o{ REVIEW : "receives reviews"
+    PRODUCT ||--o{ PRODUCT_COLLECTION : "grouped in"
+    COLLECTION ||--o{ PRODUCT_COLLECTION : "contains"
+
+    CART ||--o{ CART_ITEM : "contains"
+    PRODUCT_VARIANT ||--o{ CART_ITEM : "added as item"
+
+    ORDER ||--o{ ORDER_ITEM : "contains items"
+    PRODUCT_VARIANT ||--o{ ORDER_ITEM : "bought as"
+    VOUCHER ||--o{ ORDER : "applied to"
+    ORDER ||--o| PAYMENT : "paid by"
+    ORDER ||--o{ SHIPMENT : "fulfilled in"
+    
+    ORDER ||--o{ RETURN_REQUEST : "has returns"
+    ORDER_ITEM ||--o{ RETURN_ITEM : "returned item"
+    RETURN_REQUEST ||--o{ RETURN_ITEM : "includes items"
+    PRODUCT_VARIANT ||--o{ RETURN_ITEM : "targeted for exchange"

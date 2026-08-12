@@ -1,0 +1,19 @@
+import { IsNumber, IsOptional, IsString } from 'class-validator';
+
+export class UpdateCategoryDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  slug?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsNumber()
+  @IsOptional()
+  parentId?: number;
+}

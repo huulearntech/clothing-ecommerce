@@ -1,0 +1,15 @@
+{
+  "name": "shop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:client": "pnpm --filter web-app dev",
+    "dev:server": "pnpm --filter server dev",
+    "dev": "pnpm dev:client & pnpm dev:server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.0"
+}
