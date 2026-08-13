@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, EntityManager, In } from 'typeorm';
+import { Repository, EntityManager, In, LessThan } from 'typeorm';
 import { OutboxEntity, OutboxStatus } from './outbox.entity';
 
 export interface CreateOutboxEventDto {
   aggregateType: string;
   aggregateId: string;
   eventType: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 }
 
 @Injectable()
@@ -43,6 +43,24 @@ export class OutboxService {
       where: [
         { status: OutboxStatus.PENDING },
         { status: OutboxStatus.FAILED },
+      ],
+      order: { createdAt: 'ASC' },
+      take: limit,
+    });
+  }
+
+  /**
+   * Fetch PENDING/FAILED events created before cutoff time (e.g. 5 seconds ago) to avoid racing with immediate emitter.
+   */
+  async findStalePendingEvents(
+    delayMs = 5000,
+    limit = 10,
+  ): Promise<OutboxEntity[]> {
+    const cutoff = new Date(Date.now() - delayMs);
+    return this.outboxRepository.find({
+      where: [
+        { status: OutboxStatus.PENDING, createdAt: LessThan(cutoff) },
+        { status: OutboxStatus.FAILED, createdAt: LessThan(cutoff) },
       ],
       order: { createdAt: 'ASC' },
       take: limit,

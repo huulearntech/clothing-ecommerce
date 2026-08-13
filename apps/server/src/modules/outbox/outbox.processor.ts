@@ -1,16 +1,11 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-  OnModuleDestroy,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { OutboxService } from './outbox.service';
 import { RabbitMQProducerService } from './rabbitmq-producer.service';
 
 @Injectable()
-export class OutboxProcessor implements OnModuleInit, OnModuleDestroy {
+export class OutboxProcessor {
   private readonly logger = new Logger(OutboxProcessor.name);
-  private timer: NodeJS.Timeout | null = null;
   private isProcessing = false;
 
   constructor(
@@ -18,29 +13,19 @@ export class OutboxProcessor implements OnModuleInit, OnModuleDestroy {
     private readonly rabbitMQProducerService: RabbitMQProducerService,
   ) {}
 
-  onModuleInit() {
-    // Poll for outbox events every 3 seconds
-    this.timer = setInterval(() => this.processOutboxEvents(), 3000);
-  }
-
-  onModuleDestroy() {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
-  }
-
-  private async processOutboxEvents(): Promise<void> {
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async processOutboxEvents(): Promise<void> {
     if (this.isProcessing) return;
     this.isProcessing = true;
 
     try {
-      const pendingEvents = await this.outboxService.findPendingEvents(20);
+      // Pick up stale events older than 5 seconds to avoid racing with immediate event listener
+      const pendingEvents = await this.outboxService.findStalePendingEvents(5000, 20);
       if (pendingEvents.length === 0) {
         return;
       }
 
-      this.logger.log(`Processing ${pendingEvents.length} outbox event(s)...`);
+      this.logger.log(`[Backup Worker] Processing ${pendingEvents.length} stale outbox event(s)...`);
 
       for (const event of pendingEvents) {
         try {
@@ -49,32 +34,34 @@ export class OutboxProcessor implements OnModuleInit, OnModuleDestroy {
           switch (event.eventType) {
             case 'ORDER_CONFIRMATION':
             case 'ORDER_CREATED': {
-              // Send only outboxEventId as the minimal unique identifier to reduce message load
+              // Send outboxEventId to message queue
               await this.rabbitMQProducerService.sendToQueue({
                 outboxEventId: event.id,
               });
 
               this.logger.log(
-                `Published minimal outbox message (outboxEventId: ${event.id}) to RabbitMQ`,
+                `[Backup Worker] Published minimal outbox message (outboxEventId: ${event.id}) to RabbitMQ`,
               );
               break;
             }
 
             default:
-              this.logger.warn(`Unknown outbox event type: ${event.eventType}`);
+              this.logger.warn(`[Backup Worker] Unknown outbox event type: ${event.eventType}`);
           }
 
           await this.outboxService.markAsCompleted(event.id);
-        } catch (error: any) {
-          const errorMessage = error?.message || 'Unknown processing error';
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown processing error';
           this.logger.error(
-            `Failed to process outbox event ${event.id}: ${errorMessage}`,
+            `[Backup Worker] Failed to process outbox event ${event.id}: ${errorMessage}`,
           );
           await this.outboxService.markAsFailed(event.id, errorMessage);
         }
       }
-    } catch (err: any) {
-      this.logger.error(`Error in outbox polling loop: ${err?.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      this.logger.error(`[Backup Worker] Error in outbox backup loop: ${errorMessage}`);
     } finally {
       this.isProcessing = false;
     }

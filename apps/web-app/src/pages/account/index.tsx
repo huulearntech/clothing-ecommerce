@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Package, MapPin, User, LogOut, ArrowLeft } from "lucide-react";
 import RootLayout from "../../layouts/root.layout";
 import OrdersTab from "./components/orders-tab";
@@ -8,12 +8,33 @@ import ProfileTab from "./components/profile-tab";
 import { authService } from "../../services/auth.service";
 import { usersService } from "../../services/users.service";
 import type { User as ServerUser } from "../../services/types";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 type AccountTab = "orders" | "addresses" | "profile";
 
 export default function AccountPage() {
+  usePageTitle(
+    "My Account & Profile",
+    "Manage your account profile settings, addresses, and account security at StyleShop."
+  );
+
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<AccountTab>("orders");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabQuery = (searchParams.get("tab") as AccountTab) || "orders";
+  const [activeTab, setActiveTab] = useState<AccountTab>(
+    ["orders", "addresses", "profile"].includes(tabQuery) ? tabQuery : "orders"
+  );
+
+  useEffect(() => {
+    if (tabQuery && ["orders", "addresses", "profile"].includes(tabQuery)) {
+      setActiveTab(tabQuery);
+    }
+  }, [tabQuery]);
+
+  const handleTabChange = (tab: AccountTab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
   const [userData, setUserData] = useState<ServerUser | null>(null);
 
   useEffect(() => {
@@ -106,7 +127,7 @@ export default function AccountPage() {
           {/* Account Tabs Navigation Bar */}
           <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-4 mb-8 overflow-x-auto">
             <button
-              onClick={() => setActiveTab("orders")}
+              onClick={() => handleTabChange("orders")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === "orders"
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
@@ -118,7 +139,7 @@ export default function AccountPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab("addresses")}
+              onClick={() => handleTabChange("addresses")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === "addresses"
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
@@ -130,7 +151,7 @@ export default function AccountPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab("profile")}
+              onClick={() => handleTabChange("profile")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
                 activeTab === "profile"
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"

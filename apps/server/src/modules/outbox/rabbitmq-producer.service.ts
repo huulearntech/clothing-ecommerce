@@ -39,14 +39,15 @@ export class RabbitMQProducerService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         `Successfully connected to RabbitMQ (CloudAMQP) and asserted queue "${this.queueName}"`,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Failed to connect to RabbitMQ broker: ${error?.message || error}`,
+        `Failed to connect to RabbitMQ broker: ${errorMessage}`,
       );
     }
   }
 
-  async sendToQueue(payload: Record<string, any>): Promise<boolean> {
+  async sendToQueue(payload: Record<string, unknown>): Promise<boolean> {
     if (!this.channel) {
       this.logger.warn('RabbitMQ channel not established. Reconnecting...');
       await this.connect();
@@ -83,8 +84,9 @@ export class RabbitMQProducerService implements OnModuleInit, OnModuleDestroy {
         this.connection = null;
       }
       this.logger.log('Closed RabbitMQ connection.');
-    } catch (error: any) {
-      this.logger.error(`Error closing RabbitMQ connection: ${error?.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error closing RabbitMQ connection: ${errorMessage}`);
     }
   }
 }

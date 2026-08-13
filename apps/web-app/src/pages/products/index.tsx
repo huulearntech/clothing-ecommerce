@@ -7,6 +7,7 @@ import type { ProductItem } from "./components/product-card";
 import { catalogService } from "../../services/catalog.service";
 import type { Product as ServerProduct } from "../../services/types";
 import { SearchX } from "lucide-react";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,6 +18,17 @@ export default function ProductsPage() {
   const genderQuery = searchParams.get("gender") || searchParams.get("category") || "";
   const categorySlugQuery = searchParams.get("categorySlug") || searchParams.get("subtype") || "";
   const sortQuery = searchParams.get("sort") || "";
+
+  const pageTitle = searchQuery
+    ? `Search: "${searchQuery}" - Products`
+    : genderQuery
+      ? `${genderQuery.charAt(0).toUpperCase() + genderQuery.slice(1).toLowerCase()} Apparel Catalog`
+      : "Apparel Catalog - Shop All Products";
+
+  usePageTitle(
+    pageTitle,
+    "Browse top-half clothes, bottom-half essentials, and accessories at StyleShop."
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -43,8 +55,6 @@ export default function ProductsPage() {
             category: (p.gender || "UNISEX").toLowerCase() as ProductItem["category"],
             subtype: p.categories?.[0]?.name || "Apparel",
             price: Number(p.basePrice) || 49.99,
-            rating: 4.8,
-            reviewsCount: 25,
             image:
               p.images?.[0]?.imageUrl ||
               "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=500&q=80",

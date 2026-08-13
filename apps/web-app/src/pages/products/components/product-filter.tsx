@@ -146,49 +146,51 @@ export default function ProductFilter({
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Clear Filters Button */}
-          {hasActiveFilters && (
-            <button
-              onClick={onClearAll}
-              className="px-3 py-2.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors flex items-center gap-1"
-            >
-              <X className="h-3.5 w-3.5" />
-              Reset Filters
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Quick Filter Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-slate-100 dark:border-slate-800">
-        <span className="text-xs font-medium text-slate-400 shrink-0">Quick Filter:</span>
-        <button
-          onClick={() => {
-            onGenderChange("");
-            onCategorySlugChange("");
-          }}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 ${
-            !genderQuery && !categorySlugQuery
-              ? "bg-indigo-600 text-white shadow-sm"
-              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-          }`}
-        >
-          All Items
-        </button>
-        {GENDER_OPTIONS.filter((g) => g.value).map((g) => (
+      {/* Quick Filter Pills & Reset Filters */}
+      <div className="flex items-center justify-between gap-3 overflow-x-auto pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          <span className="text-xs font-medium text-slate-400 shrink-0">Quick Filter:</span>
           <button
-            key={g.value}
-            onClick={() => onGenderChange(genderQuery === g.value ? "" : g.value)}
+            onClick={() => {
+              onGenderChange("");
+              onCategorySlugChange("");
+            }}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 ${
-              genderQuery === g.value
+              !genderQuery && !categorySlugQuery
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
-            {g.label}
+            All Items
           </button>
-        ))}
+          {GENDER_OPTIONS.filter((g) => g.value).map((g) => (
+            <button
+              key={g.value}
+              onClick={() => onGenderChange(genderQuery === g.value ? "" : g.value)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 ${
+                genderQuery === g.value
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+              }`}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Reset Filter Button in lower row to prevent layout shifting */}
+        {hasActiveFilters && (
+          <button
+            onClick={onClearAll}
+            className="px-3 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/50 rounded-full transition-all shrink-0 flex items-center gap-1.5 ml-auto"
+          >
+            <X className="h-3.5 w-3.5" />
+            Reset Filters
+          </button>
+        )}
       </div>
     </div>
   );

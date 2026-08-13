@@ -7,11 +7,23 @@ import type {
   CreateOrderPayload,
   CreatePaymentPayload,
   CreateShipmentPayload,
+  CalculateOrderSummaryPayload,
+  OrderSummaryResponse,
 } from './types';
 
 export const ordersService = {
   createOrder: async (payload: CreateOrderPayload): Promise<Order> => {
     const { data } = await apiClient.post<Order>('/orders', payload);
+    return data;
+  },
+
+  calculateOrderSummary: async (
+    payload: CalculateOrderSummaryPayload,
+  ): Promise<OrderSummaryResponse> => {
+    const { data } = await apiClient.post<OrderSummaryResponse>(
+      '/orders/calculate-summary',
+      payload,
+    );
     return data;
   },
 
@@ -52,6 +64,14 @@ export const ordersService = {
     const { data } = await apiClient.post<Shipment>(
       '/orders/shipments',
       payload,
+    );
+    return data;
+  },
+
+  confirmDelivery: async (orderId: string, userId: string): Promise<Order> => {
+    const { data } = await apiClient.post<Order>(
+      `/orders/${orderId}/confirm-delivery`,
+      { userId },
     );
     return data;
   },

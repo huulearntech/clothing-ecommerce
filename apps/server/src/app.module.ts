@@ -45,8 +45,13 @@ import { ShippingZone } from './modules/shipping/entities/shipping-zone.entity';
 import { ShippingMethod } from './modules/shipping/entities/shipping-method.entity';
 import { ShippingModule } from './modules/shipping/shipping.module';
 
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
+
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

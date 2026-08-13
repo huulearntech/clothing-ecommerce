@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 
 import CartPage from './pages/cart';
 import Home from './pages/home';
@@ -8,7 +8,7 @@ import ProductsPage from './pages/products';
 import WishlistPage from './pages/wishlist';
 import CheckoutPage from './pages/checkout';
 import AccountPage from './pages/account';
-import OrdersPage from './pages/orders';
+import OrderDetailPage from './pages/order_detail';
 import AuthPage from './pages/auth';
 import AdminDashboardRoot from './pages/admin/admin-root';
 import AdminOverviewPage from './pages/admin/overview-page';
@@ -76,10 +76,14 @@ const router = createBrowserRouter([
   },
   {
     path: '/orders',
+    element: <Navigate to="/account?tab=orders" replace />,
+  },
+  {
+    path: '/orders/:id',
     element: (
       <AuthGuard>
         <CustomerGuard>
-          <OrdersPage />
+          <OrderDetailPage />
         </CustomerGuard>
       </AuthGuard>
     ),

@@ -7,6 +7,7 @@ import { authService } from "../../services/auth.service";
 import { wishlistService } from "../../services/wishlist.service";
 import { cartService } from "../../services/cart.service";
 import type { WishlistItem as ServerWishlistItem } from "../../services/types";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 interface WishlistItemUI {
   id: string;
@@ -23,6 +24,11 @@ interface WishlistItemUI {
 }
 
 export default function WishlistPage() {
+  usePageTitle(
+    "My Saved Wishlist",
+    "View and manage your saved clothing items and accessories at StyleShop."
+  );
+
   const [items, setItems] = useState<WishlistItemUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [addedMap, setAddedMap] = useState<Record<string, boolean>>({});

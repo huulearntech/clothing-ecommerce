@@ -28,7 +28,7 @@ export class OutboxEntity {
   eventType: string;
 
   @Column({ type: 'jsonb' })
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 
   @Column({
     type: 'enum',

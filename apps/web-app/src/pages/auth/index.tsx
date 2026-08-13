@@ -3,9 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, Sparkles, User, CheckCircle2, AlertCircle } from "lucide-react";
 import RootLayout from "../../layouts/root.layout";
 import { authService } from "../../services/auth.service";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+
+  usePageTitle(
+    isLogin ? "Sign In - StyleShop Account" : "Create Account - StyleShop",
+    "Sign in or create a new StyleShop account for fast checkout, saved orders, and wishlist tracking."
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

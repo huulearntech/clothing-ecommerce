@@ -5,6 +5,7 @@ import type {
   Collection,
   Product,
   ProductVariant,
+  GetProductsFilterParams,
   CreateBrandPayload,
   CreateCategoryPayload,
   CreateCollectionPayload,
@@ -60,7 +61,7 @@ export const catalogService = {
     );
     return data;
   },
-  getProducts: async (params?: Record<string, any>): Promise<Product[]> => {
+  getProducts: async (params?: GetProductsFilterParams): Promise<Product[]> => {
     const { data } = await apiClient.get<Product[]>('/catalog/products', { params });
     return data;
   },

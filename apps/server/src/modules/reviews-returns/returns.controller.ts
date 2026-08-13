@@ -25,6 +25,11 @@ export class ReturnsController {
     return this.returnsService.findAll();
   }
 
+  @Get('user/:userId')
+  findByUser(@Param('userId', ParseUUIDPipe) userId: string) {
+    return this.returnsService.findByUser(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.returnsService.findOne(id);

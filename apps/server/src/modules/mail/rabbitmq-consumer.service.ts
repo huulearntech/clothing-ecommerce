@@ -90,9 +90,9 @@ export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
               return;
             }
 
-            const { orderId } = outboxEvent.payload || {};
+            const orderId = outboxEvent.payload?.orderId;
 
-            if (orderId) {
+            if (typeof orderId === 'string') {
               await this.mailService.sendOrderConfirmationEmail(orderId);
               this.logger.log(
                 `Successfully processed email for order ${orderId} via outboxEventId ${outboxEventId}`,

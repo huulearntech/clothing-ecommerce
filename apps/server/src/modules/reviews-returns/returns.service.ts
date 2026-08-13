@@ -54,6 +54,14 @@ export class ReturnsService {
     return req;
   }
 
+  async findByUser(userId: string): Promise<ReturnRequest[]> {
+    return this.returnRepo.find({
+      where: { userId },
+      relations: { items: true, order: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async updateStatus(
     id: string,
     dto: UpdateReturnStatusDto,

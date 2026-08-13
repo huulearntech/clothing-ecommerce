@@ -102,4 +102,11 @@ export class ShippingService {
     const method = this.methodRepo.create(dto);
     return this.methodRepo.save(method);
   }
+
+  async getShipmentsByOrder(orderId: string): Promise<Shipment[]> {
+    return this.shipmentRepo.find({
+      where: { orderId },
+      order: { shippedAt: 'DESC' },
+    });
+  }
 }

@@ -260,6 +260,17 @@ export interface Product {
   images?: ProductImage[];
 }
 
+export interface GetProductsFilterParams {
+  search?: string;
+  gender?: string;
+  categorySlug?: string;
+  size?: string;
+  colorName?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string;
+}
+
 export interface CreateBrandPayload {
   name: string;
   slug: string;
@@ -404,6 +415,7 @@ export interface OrderItem {
   id: string;
   orderId: string;
   variantId?: string;
+  variant?: ProductVariant;
   productNameSnapshot: string;
   skuSnapshot: string;
   sizeSnapshot: string;
@@ -429,7 +441,9 @@ export interface Shipment {
   carrier: string;
   trackingNumber: string;
   status: ShipmentStatus;
+  estimatedDeliveryDate: string | null;
   shippedAt: string;
+  deliveredAt: string | null;
 }
 
 export interface AddressSnapshot {
@@ -437,10 +451,13 @@ export interface AddressSnapshot {
   fullName?: string;
   name?: string;
   email?: string;
+  streetAddress?: string;
   streetLine1?: string;
   streetLine2?: string;
   city?: string;
+  state?: string;
   stateProvince?: string;
+  zipCode?: string;
   postalCode?: string;
   country?: string;
   phone?: string;
@@ -620,4 +637,46 @@ export interface GenerateBatchSkusPayload {
   productName?: string;
   items: GenerateSkuItem[];
 }
+
+export interface CalculateOrderSummaryItemPayload {
+  variantId: string;
+  quantity: number;
+}
+
+export interface CalculateOrderSummaryPayload {
+  items: CalculateOrderSummaryItemPayload[];
+  voucherId?: string;
+  voucherCode?: string;
+  shippingCost?: number;
+}
+
+export interface OrderSummaryItemBreakdown {
+  variantId: string;
+  productName: string;
+  size: string;
+  colorName: string;
+  imageUrl: string;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+}
+
+export interface OrderSummaryResponse {
+  subtotalAmount: number;
+  discountAmount: number;
+  shippingFee: number;
+  taxAmount: number;
+  totalAmount: number;
+  totalItemQuantity: number;
+  items: OrderSummaryItemBreakdown[];
+  appliedVoucher?: {
+    id: string;
+    code: string;
+    name: string;
+    discountType: DiscountType;
+    discountValue: number;
+  } | null;
+  voucherError?: string | null;
+}
+
 

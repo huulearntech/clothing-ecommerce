@@ -20,6 +20,7 @@ import { wishlistService } from "../../services/wishlist.service";
 import { authService } from "../../services/auth.service";
 import type { Product as ServerProduct } from "../../services/types";
 import { cn } from "@/lib/utils";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const DEFAULT_DETAILS = [
   "100% Organic Oxford Cotton",
@@ -58,6 +59,11 @@ export default function ProductDetailPage() {
     images: string[];
     details: string[];
   } | null>(null);
+
+  usePageTitle(
+    product ? `${product.name} - Buy Online` : "Product Details",
+    product?.description || "View product details, sizes, colors, and reviews at StyleShop."
+  );
 
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);

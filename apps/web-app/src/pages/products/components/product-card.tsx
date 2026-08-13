@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Star, ShoppingCart, Heart, Check, Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cartService } from "../../../services/cart.service";
 import { toast } from "sonner";
 import { wishlistService } from "../../../services/wishlist.service";
 import { authService } from "../../../services/auth.service";
+import { reviewsService } from "../../../services/reviews-returns.service";
 
 export interface ProductItem {
   id: string;
@@ -14,27 +15,46 @@ export interface ProductItem {
   subtype: string;
   price: number;
   originalPrice?: number;
-  rating: number;
-  reviewsCount: number;
+  rating?: number;
+  reviewsCount?: number;
   image: string;
   colors: string[];
   sizes: string[];
   isNew?: boolean;
 }
+
 export default function ProductCard({ product }: { product: ProductItem }) {
   const queryClient = useQueryClient();
   const [added, setAdded] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const currentUser = authService.getCurrentUser();
   const isAdmin = currentUser?.role === "ADMIN";
+
+  // Fetch real rating data from server
+  const { data: ratingData } = useQuery({
+    queryKey: ["product-rating", product.id],
+    queryFn: () => reviewsService.getAverageRating(product.id),
+    enabled: !!product.id,
+  });
+
+  // Fetch wishlist for current user to check if item is wishlisted
+  const { data: wishlist } = useQuery({
+    queryKey: ["wishlist", currentUser?.id],
+    queryFn: () => wishlistService.getWishlistByUserId(currentUser?.id),
+    enabled: !!currentUser?.id,
+  });
+
+  const wishlistItem = wishlist?.items?.find((item) => item.productId === product.id);
+  const isWishlisted = !!wishlistItem;
 
   const categoryLabel =
     product.category === "top-half"
       ? "Top-Half"
       : product.category === "bottom-half"
         ? "Bottom-Half"
-        : "Accessories";
+        : product.category === "accessories"
+          ? "Accessories"
+          : product.category;
 
   const addToCartMutation = useMutation({
     mutationFn: (variantId: string) => cartService.addItem({ variantId, quantity: 1 }),
@@ -43,12 +63,12 @@ export default function ProductCard({ product }: { product: ProductItem }) {
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast.error(err.message || "Failed to add product to cart.");
     },
   });
 
-  const toggleWishlistMutation = useMutation({
+  const addToWishlistMutation = useMutation({
     mutationFn: () =>
       wishlistService.addToWishlist({
         productId: product.id,
@@ -56,11 +76,21 @@ export default function ProductCard({ product }: { product: ProductItem }) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });
-      setIsWishlisted((prev) => !prev);
-      toast.success(isWishlisted ? "Removed from wishlist" : "Added to wishlist");
+      toast.success("Added to wishlist");
     },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to update wishlist.");
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to add product to wishlist.");
+    },
+  });
+
+  const removeFromWishlistMutation = useMutation({
+    mutationFn: (itemId: string) => wishlistService.removeFromWishlist(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+      toast.success("Removed from wishlist");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to remove product from wishlist.");
     },
   });
 
@@ -79,8 +109,22 @@ export default function ProductCard({ product }: { product: ProductItem }) {
       toast.warning("Admins are not allowed to add items to wishlist.");
       return;
     }
-    toggleWishlistMutation.mutate();
+    if (!currentUser) {
+      toast.error("Please sign in to manage your wishlist.");
+      return;
+    }
+
+    if (isWishlisted && wishlistItem) {
+      removeFromWishlistMutation.mutate(wishlistItem.id);
+    } else {
+      addToWishlistMutation.mutate();
+    }
   };
+
+  const isWishlistPending =
+    addToWishlistMutation.isPending || removeFromWishlistMutation.isPending;
+
+  const displayRating = ratingData?.average ?? product.rating ?? 0;
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col justify-between">
@@ -101,11 +145,13 @@ export default function ProductCard({ product }: { product: ProductItem }) {
           )}
           <button
             onClick={handleToggleWishlist}
-            aria-label="Wishlist"
-            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-colors shadow-sm ${isWishlisted
-              ? "bg-rose-50 dark:bg-rose-950 text-red-500"
-              : "bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:text-red-500"
-              }`}
+            disabled={isWishlistPending}
+            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-colors shadow-sm ${
+              isWishlisted
+                ? "bg-rose-50 dark:bg-rose-950 text-red-500"
+                : "bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 hover:text-red-500"
+            } ${isWishlistPending ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
           </button>
@@ -118,7 +164,12 @@ export default function ProductCard({ product }: { product: ProductItem }) {
             </span>
             <div className="flex items-center text-xs text-amber-500 font-semibold gap-1">
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span>{product.rating}</span>
+              <span>{displayRating}</span>
+              {ratingData && ratingData.total > 0 && (
+                <span className="text-slate-400 font-normal">
+                  ({ratingData.total})
+                </span>
+              )}
             </div>
           </div>
           <a href={`/products/${product.id}`} className="block">
@@ -149,10 +200,11 @@ export default function ProductCard({ product }: { product: ProductItem }) {
         <button
           onClick={handleAddToCart}
           disabled={addToCartMutation.isPending}
-          className={`w-full py-2.5 px-4 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm ${added
-            ? "bg-emerald-600 hover:bg-emerald-700"
-            : "bg-slate-900 dark:bg-slate-800 hover:bg-indigo-600"
-            }`}
+          className={`w-full py-2.5 px-4 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm ${
+            added
+              ? "bg-emerald-600 hover:bg-emerald-700"
+              : "bg-slate-900 dark:bg-slate-800 hover:bg-indigo-600"
+          }`}
         >
           {addToCartMutation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

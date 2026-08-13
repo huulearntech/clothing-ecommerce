@@ -30,6 +30,12 @@ export class Shipment {
   @Column({ type: 'varchar', default: ShipmentStatus.LABEL_CREATED })
   status: ShipmentStatus;
 
+  @Column({ name: 'estimated_delivery_date', type: 'timestamp', nullable: true })
+  estimatedDeliveryDate: Date | null;
+
   @CreateDateColumn({ name: 'shipped_at' })
   shippedAt: Date;
+
+  @Column({ name: 'delivered_at', type: 'timestamp', nullable: true })
+  deliveredAt: Date | null;
 }

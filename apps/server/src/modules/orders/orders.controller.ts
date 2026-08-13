@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CalculateOrderSummaryDto } from './dto/calculate-order-summary.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
@@ -20,6 +21,11 @@ export class OrdersController {
   @Post()
   createOrder(@Body() dto: CreateOrderDto) {
     return this.ordersService.createOrder(dto);
+  }
+
+  @Post('calculate-summary')
+  calculateSummary(@Body() dto: CalculateOrderSummaryDto) {
+    return this.ordersService.calculateOrderSummary(dto);
   }
 
   @Get()
@@ -53,5 +59,13 @@ export class OrdersController {
   @Post('shipments')
   createShipment(@Body() dto: CreateShipmentDto) {
     return this.ordersService.createShipment(dto);
+  }
+
+  @Post(':id/confirm-delivery')
+  confirmDelivery(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.ordersService.confirmDelivery(id, userId);
   }
 }

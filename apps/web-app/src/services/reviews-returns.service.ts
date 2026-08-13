@@ -59,4 +59,11 @@ export const returnsService = {
     );
     return data;
   },
+
+  getReturnRequestsByUser: async (userId: string): Promise<ReturnRequest[]> => {
+    const { data } = await apiClient.get<ReturnRequest[]>(
+      `/returns/user/${userId}`,
+    );
+    return data;
+  },
 };

@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ShoppingBag,
   ShieldCheck,
   Tag,
   ArrowRight,
+  Ticket,
+  X,
+  Loader2,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import RootLayout from "../../layouts/root.layout";
 import CartCardItem from "./components/cart-card-item";
 import { cartService } from "../../services/cart.service";
-import type { CartItem as ServerCartItem } from "../../services/types";
+import { vouchersService } from "../../services/vouchers.service";
+import { ordersService } from "../../services/orders.service";
+import type { CartItem as ServerCartItem, Voucher } from "../../services/types";
+import { DiscountType } from "../../services/types";
+import VoucherSelectorModal from "../checkout/components/voucher-selector-modal";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 interface CartItemType {
   id: string;
@@ -27,13 +36,26 @@ interface CartItemType {
 }
 
 export default function CartPage() {
+  usePageTitle(
+    "Shopping Cart",
+    "Review items in your shopping cart and proceed to secure checkout at StyleShop."
+  );
+
+  const navigate = useNavigate();
   const [items, setItems] = useState<CartItemType[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [promoCode, setPromoCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
+
+  // Real Server Voucher States
+  const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
+  const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
+
+  // Pre-Checkout Validation State
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
     cartService
@@ -116,30 +138,35 @@ export default function CartPage() {
     }
   };
 
-  const handleApplyPromo = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPromoError("");
-    setPromoSuccess("");
-
-    if (promoCode.trim().toUpperCase() === "STYLE10") {
-      setDiscountPercent(10);
-      setPromoSuccess("10% discount applied!");
-    } else if (promoCode.trim().toUpperCase() === "FREESHIP") {
-      setDiscountPercent(15);
-      setPromoSuccess("15% special discount applied!");
-    } else {
-      setPromoError("Invalid code. Try 'STYLE10'");
-    }
-  };
-
   const selectedItems = items.filter((i) => selectedItemIds.includes(i.id));
 
   const subtotal = selectedItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const discountAmount = (subtotal * discountPercent) / 100;
-  const shipping = subtotal > 100 || selectedItems.length === 0 ? 0 : 7.99;
+
+  let discountAmount = 0;
+  let isFreeShippingVoucher = false;
+
+  if (appliedVoucher) {
+    if (appliedVoucher.discountType === DiscountType.FREE_SHIPPING) {
+      isFreeShippingVoucher = true;
+    } else if (appliedVoucher.discountType === DiscountType.PERCENTAGE) {
+      discountAmount = (subtotal * Number(appliedVoucher.discountValue)) / 100;
+      if (
+        appliedVoucher.maxDiscountAmount &&
+        discountAmount > Number(appliedVoucher.maxDiscountAmount)
+      ) {
+        discountAmount = Number(appliedVoucher.maxDiscountAmount);
+      }
+    } else if (appliedVoucher.discountType === DiscountType.FIXED_AMOUNT) {
+      discountAmount = Math.min(Number(appliedVoucher.discountValue), subtotal);
+    }
+  }
+
+  discountAmount = Number(discountAmount.toFixed(2));
+  const shipping =
+    isFreeShippingVoucher || subtotal > 100 || selectedItems.length === 0 ? 0 : 7.99;
   const grandTotal = Math.max(0, subtotal - discountAmount + shipping);
 
   const freeShippingThreshold = 100;
@@ -149,11 +176,101 @@ export default function CartPage() {
     (subtotal / freeShippingThreshold) * 100,
   );
 
-  const handleProceedToCheckout = () => {
-    sessionStorage.setItem(
-      "selected_cart_item_ids",
-      JSON.stringify(selectedItemIds),
-    );
+  const handleApplyPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoCodeInput.trim()) return;
+
+    setPromoError("");
+    setPromoSuccess("");
+    setIsApplyingVoucher(true);
+
+    try {
+      const selectedItemsCount = selectedItems.reduce((acc, i) => acc + i.quantity, 0);
+      const result = await vouchersService.validateAndApplyVoucher({
+        code: promoCodeInput.trim().toUpperCase(),
+        orderAmount: subtotal,
+        itemQuantity: selectedItemsCount,
+      });
+
+      if (result && result.voucher) {
+        setAppliedVoucher(result.voucher);
+        setPromoSuccess(`Voucher "${result.voucher.code}" applied!`);
+      }
+    } catch (err: unknown) {
+      const errorMsg =
+        err && typeof err === "object" && "response" in err && err.response && typeof err.response === "object" && "data" in err.response && err.response.data && typeof err.response.data === "object" && "message" in err.response.data
+          ? String(err.response.data.message)
+          : err instanceof Error
+          ? err.message
+          : "Failed to apply voucher.";
+      setPromoError(errorMsg);
+    } finally {
+      setIsApplyingVoucher(false);
+    }
+  };
+
+  const handleSelectVoucherFromModal = (voucher: Voucher) => {
+    setAppliedVoucher(voucher);
+    setPromoCodeInput(voucher.code);
+    setPromoError("");
+    setPromoSuccess(`Voucher "${voucher.code}" applied!`);
+  };
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setPromoCodeInput("");
+    setPromoError("");
+    setPromoSuccess("");
+  };
+
+  const handleProceedToCheckout = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (selectedItemIds.length === 0) {
+      toast.warning("Please select at least one item to proceed to payment.");
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const selectedItemsToCheckout = items.filter((i) => selectedItemIds.includes(i.id));
+
+      // Early server validation for product stock availability & voucher validity
+      const summaryResult = await ordersService.calculateOrderSummary({
+        items: selectedItemsToCheckout.map((item) => ({
+          variantId: item.variantId!,
+          quantity: item.quantity,
+        })),
+        voucherId: appliedVoucher?.id,
+        voucherCode: appliedVoucher?.code,
+      });
+
+      if (summaryResult.voucherError) {
+        toast.error(`Voucher Notice: ${summaryResult.voucherError}`);
+        setIsCheckingOut(false);
+        return;
+      }
+
+      // Store selected items & prefilled voucher in sessionStorage
+      sessionStorage.setItem("selected_cart_item_ids", JSON.stringify(selectedItemIds));
+      if (appliedVoucher) {
+        sessionStorage.setItem("cart_applied_voucher", JSON.stringify(appliedVoucher));
+      } else {
+        sessionStorage.removeItem("cart_applied_voucher");
+      }
+
+      toast.success("Availability check passed! Transitioning to checkout...");
+      navigate("/checkout");
+    } catch (err: unknown) {
+      const errorMsg =
+        err && typeof err === "object" && "response" in err && err.response && typeof err.response === "object" && "data" in err.response && err.response.data && typeof err.response.data === "object" && "message" in err.response.data
+          ? String(err.response.data.message)
+          : err instanceof Error
+          ? err.message
+          : "Product stock or voucher availability check failed.";
+      toast.error(errorMsg);
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   return (
@@ -264,37 +381,78 @@ export default function CartPage() {
                     Order Summary
                   </h2>
 
-                  <form onSubmit={handleApplyPromo} className="mb-6">
-                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                      Have a Promo Code? (Try "STYLE10")
-                    </label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Tag className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                        <input
-                          type="text"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          placeholder="Coupon Code"
-                          className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
-                        />
-                      </div>
+                  {/* Real Server Voucher Component */}
+                  <div className="mb-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Voucher / Coupon Code
+                      </label>
                       <button
-                        type="submit"
-                        className="px-4 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors"
+                        type="button"
+                        onClick={() => setIsVoucherModalOpen(true)}
+                        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        Apply
+                        <Ticket className="h-3.5 w-3.5" />
+                        Select Voucher
                       </button>
                     </div>
-                    {promoError && (
-                      <p className="text-xs text-red-500 mt-1">{promoError}</p>
+
+                    {appliedVoucher ? (
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800">
+                        <div className="flex items-center gap-2">
+                          <Ticket className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                          <div>
+                            <p className="text-xs font-bold text-slate-900 dark:text-white font-mono uppercase">
+                              {appliedVoucher.code}
+                            </p>
+                            <p className="text-[11px] text-indigo-600 dark:text-indigo-400">
+                              {appliedVoucher.name || "Active Voucher Applied"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveVoucher}
+                          className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                          title="Remove voucher"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleApplyPromo} className="space-y-2">
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Tag className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                            <input
+                              type="text"
+                              value={promoCodeInput}
+                              onChange={(e) => setPromoCodeInput(e.target.value)}
+                              placeholder="Enter Voucher Code"
+                              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-indigo-500 text-slate-900 dark:text-white font-mono uppercase"
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            disabled={isApplyingVoucher || !promoCodeInput.trim()}
+                            className="px-4 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            {isApplyingVoucher ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              "Apply"
+                            )}
+                          </button>
+                        </div>
+                        {promoError && (
+                          <p className="text-xs text-rose-500 font-medium">{promoError}</p>
+                        )}
+                        {promoSuccess && (
+                          <p className="text-xs text-emerald-600 font-medium">{promoSuccess}</p>
+                        )}
+                      </form>
                     )}
-                    {promoSuccess && (
-                      <p className="text-xs text-emerald-600 font-medium mt-1">
-                        {promoSuccess}
-                      </p>
-                    )}
-                  </form>
+                  </div>
 
                   <div className="space-y-3 text-xs sm:text-sm border-t border-slate-100 dark:border-slate-800 pt-4">
                     <div className="flex justify-between text-slate-600 dark:text-slate-400">
@@ -306,7 +464,7 @@ export default function CartPage() {
 
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-emerald-600 font-medium">
-                        <span>Promo Discount ({discountPercent}%)</span>
+                        <span>Voucher Discount</span>
                         <span>-${discountAmount.toFixed(2)}</span>
                       </div>
                     )}
@@ -334,25 +492,28 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                  <a
-                    href={selectedItemIds.length > 0 ? "/checkout" : "#"}
-                    onClick={(e) => {
-                      if (selectedItemIds.length === 0) {
-                        e.preventDefault();
-                        toast.warning("Please select at least one item to proceed to payment.");
-                      } else {
-                        handleProceedToCheckout();
-                      }
-                    }}
+                  <button
+                    type="button"
+                    onClick={handleProceedToCheckout}
+                    disabled={selectedItemIds.length === 0 || isCheckingOut}
                     className={`w-full mt-6 py-3.5 px-4 text-white font-semibold text-sm rounded-xl transition-all flex items-center justify-center gap-2 ${
-                      selectedItemIds.length > 0
+                      selectedItemIds.length > 0 && !isCheckingOut
                         ? "bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 cursor-pointer"
                         : "bg-slate-400 dark:bg-slate-700 cursor-not-allowed opacity-60"
                     }`}
                   >
-                    <ShieldCheck className="h-4 w-4" />
-                    Proceed to Checkout ({selectedItemIds.length})
-                  </a>
+                    {isCheckingOut ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Checking Availability...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="h-4 w-4" />
+                        Proceed to Checkout ({selectedItemIds.length})
+                      </>
+                    )}
+                  </button>
 
                   <p className="text-[11px] text-slate-400 text-center mt-3 flex items-center justify-center gap-1">
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
@@ -364,6 +525,17 @@ export default function CartPage() {
           )}
         </div>
       </main>
+
+      {/* Voucher Selector Modal */}
+      <VoucherSelectorModal
+        isOpen={isVoucherModalOpen}
+        onClose={() => setIsVoucherModalOpen(false)}
+        subtotal={subtotal}
+        totalItemQuantity={selectedItems.reduce((acc, i) => acc + i.quantity, 0)}
+        appliedVoucherCode={appliedVoucher?.code}
+        onSelectVoucher={handleSelectVoucherFromModal}
+      />
     </RootLayout>
   );
 }
+

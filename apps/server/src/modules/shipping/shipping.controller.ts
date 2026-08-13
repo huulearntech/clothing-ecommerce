@@ -29,6 +29,11 @@ export class ShippingController {
     return this.shippingService.getAllZones();
   }
 
+  @Get('order/:orderId')
+  getShipmentsByOrder(@Param('orderId') orderId: string) {
+    return this.shippingService.getShipmentsByOrder(orderId);
+  }
+
   @Post('methods')
   createMethod(@Body() createMethodDto: CreateShippingMethodDto) {
     return this.shippingService.createMethod(createMethodDto);

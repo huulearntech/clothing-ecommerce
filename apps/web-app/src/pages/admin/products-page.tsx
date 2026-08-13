@@ -3,8 +3,14 @@ import ProductModal from "./components/product-modal";
 import { useState, useEffect } from "react";
 import { catalogService } from "../../services/catalog.service";
 import type { Product } from "../../services/types";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 export default function AdminProductsPage() {
+  usePageTitle(
+    "Admin Products Management",
+    "StyleShop Catalog & Product Management Administration."
+  );
+
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
