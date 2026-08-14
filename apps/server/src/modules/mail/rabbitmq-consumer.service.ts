@@ -8,11 +8,16 @@ import { ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
 import { OutboxService } from '../outbox/outbox.service';
 import * as amqp from 'amqplib';
+import { RabbitMQConnectionService } from '../rabbitmq/rabbitmq-connection.service';
+
+interface OutboxPayload {
+  outboxEventId?: string;
+  [key: string]: unknown;
+}
 
 @Injectable()
 export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMQConsumerService.name);
-  private connection: amqp.ChannelModel | null = null;
   private channel: amqp.Channel | null = null;
   private readonly queueName = 'order_confirmation_mail_queue';
 
@@ -20,23 +25,18 @@ export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
     private readonly outboxService: OutboxService,
-  ) { }
+    private readonly rabbitmqConnectionService: RabbitMQConnectionService,
+  ) {}
 
   async onModuleInit() {
     await this.startConsumer();
   }
 
   async onModuleDestroy() {
-    await this.close();
+    await this.closeChannel();
   }
 
   private async startConsumer(): Promise<void> {
-    const amqpUrl = this.configService.get<string>(
-      'CLOUDAMQP_URL',
-      this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost'),
-    );
-
-    // Configurable prefetch limit to avoid consumer out-of-memory (default to 10)
     const rawLimit = this.configService.get<string | number>(
       'RABBITMQ_PREFETCH_LIMIT',
       10,
@@ -45,27 +45,25 @@ export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
     const prefetchLimit = !isNaN(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10;
 
     try {
-      this.connection = await amqp.connect(amqpUrl);
-      this.channel = await this.connection.createChannel();
+      this.channel = await this.rabbitmqConnectionService.createChannel();
 
       await this.channel.assertQueue(this.queueName, {
         durable: true,
       });
 
-      // Set prefetch count to limit concurrent message processing and prevent OOM
       await this.channel.prefetch(prefetchLimit);
       this.logger.log(
-        `RabbitMQ consumer initialized for queue "${this.queueName}" with prefetch limit = ${prefetchLimit}`,
+        `RabbitMQ consumer initialized channel for queue "${this.queueName}" with prefetch limit = ${prefetchLimit}`,
       );
 
       await this.channel.consume(
         this.queueName,
-        async (msg) => {
+        async (msg: amqp.ConsumeMessage | null) => {
           if (!msg) return;
 
           try {
             const contentString = msg.content.toString();
-            const payload = JSON.parse(contentString);
+            const payload = JSON.parse(contentString) as OutboxPayload;
             const { outboxEventId } = payload;
 
             if (!outboxEventId) {
@@ -80,7 +78,6 @@ export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
               `Consuming RabbitMQ message for outboxEventId: ${outboxEventId}`,
             );
 
-            // Fetch event details using outboxEventId
             const outboxEvent =
               await this.outboxService.findEventById(outboxEventId);
 
@@ -105,39 +102,39 @@ export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
               );
             }
 
-            // Acknowledge message only upon successful execution
             this.channel?.ack(msg);
-          } catch (error: any) {
+          } catch (error: unknown) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
             this.logger.error(
-              `Error consuming message from RabbitMQ queue: ${error?.message || error}`,
+              `Error consuming message from RabbitMQ queue: ${errorMessage}`,
             );
-            // Requeue or nack based on strategy (nack with requeue=false to avoid infinite loop)
             this.channel?.nack(msg, false, false);
           }
         },
         { noAck: false },
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Failed to start RabbitMQ consumer: ${error?.message || error}`,
+        `Failed to start RabbitMQ consumer: ${errorMessage}`,
       );
     }
   }
 
-  private async close(): Promise<void> {
+  private async closeChannel(): Promise<void> {
     try {
       if (this.channel) {
         await this.channel.close();
         this.channel = null;
       }
-      if (this.connection) {
-        await this.connection.close();
-        this.connection = null;
-      }
-      this.logger.log('Closed RabbitMQ consumer connection.');
-    } catch (error: any) {
+      this.logger.log('Closed RabbitMQ consumer channel.');
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Error closing RabbitMQ consumer connection: ${error?.message}`,
+        `Error closing RabbitMQ consumer channel: ${errorMessage}`,
       );
     }
   }

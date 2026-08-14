@@ -11,6 +11,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { ReviewsReturnsModule } from './modules/reviews-returns/reviews-returns.module';
 import { OutboxModule } from './modules/outbox/outbox.module';
 import { ImageStorageModule } from './modules/image_storage/image_storage.module';
+import { RabbitMQModule } from './modules/rabbitmq/rabbitmq.module';
 
 import { User } from './modules/users/entities/user.entity';
 import { Address } from './modules/users/entities/address.entity';
@@ -105,6 +106,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProductsModule,
     StatisticsModule,
     OutboxModule,
+    RabbitMQModule,
     ShippingModule.register(),
     ImageStorageModule.register(),
   ],
