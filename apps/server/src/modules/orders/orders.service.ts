@@ -22,7 +22,7 @@ import {
   OrderSummaryResponse,
   OrderSummaryItemBreakdown,
 } from './dto/calculate-order-summary.dto';
-import { DiscountType, OrderStatus, ShipmentStatus } from 'src/common/enums';
+import { DiscountType, OrderStatus, ShipmentStatus } from '../../common/enums';
 
 @Injectable()
 export class OrdersService {
