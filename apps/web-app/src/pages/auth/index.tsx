@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, Sparkles, User, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, Sparkles, User, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import RootLayout from "../../layouts/root.layout";
 import { authService } from "../../services/auth.service";
 import { usePageTitle } from "../../hooks/usePageTitle";
@@ -17,6 +17,9 @@ export default function AuthPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [registeredSuccessMsg, setRegisteredSuccessMsg] = useState<string | null>(null);
   const [registeredEmail, setRegisteredEmail] = useState<string>('');
+  const [showResendFromLogin, setShowResendFromLogin] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMsg, setResendMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -38,6 +41,8 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg(null);
+    setShowResendFromLogin(false);
+    setResendMsg(null);
 
     try {
       if (isLogin) {
@@ -68,13 +73,19 @@ export default function AuthPage() {
         );
         setIsLogin(true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Auth error:", err);
+      const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string };
       const message =
-        err?.response?.data?.message ||
-        err?.message ||
+        axiosErr?.response?.data?.message ||
+        axiosErr?.message ||
         "An unexpected error occurred during authentication.";
-      setErrorMsg(Array.isArray(message) ? message.join(", ") : message);
+      const messageStr = Array.isArray(message) ? message.join(", ") : message;
+      setErrorMsg(messageStr);
+
+      if (isLogin && messageStr.toLowerCase().includes('verify your email')) {
+        setShowResendFromLogin(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -251,6 +262,66 @@ export default function AuthPage() {
                 <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {showResendFromLogin && (
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-left">
+                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-semibold text-sm mb-2">
+                    <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Resend Activation Link</span>
+                  </div>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                    Didn't receive the email? Enter your address below to get a new activation link.
+                  </p>
+
+                  {resendMsg && (
+                    <div
+                      className={`p-2.5 rounded-lg text-xs mb-3 ${
+                        resendMsg.type === 'success'
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                          : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                      }`}
+                    >
+                      {resendMsg.text}
+                    </div>
+                  )}
+
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const emailInput = formData.email.trim();
+                      if (!emailInput) return;
+                      setResendLoading(true);
+                      setResendMsg(null);
+                      try {
+                        const res = await authService.resendVerification({ email: emailInput });
+                        setResendMsg({ type: 'success', text: res.message });
+                      } catch (resendErr: unknown) {
+                        const axiosResendErr = resendErr as { response?: { data?: { message?: string | string[] } }; message?: string };
+                        const errMsg =
+                          axiosResendErr?.response?.data?.message ||
+                          axiosResendErr?.message ||
+                          'Failed to resend activation link.';
+                        setResendMsg({ type: 'error', text: Array.isArray(errMsg) ? errMsg.join(', ') : errMsg });
+                      } finally {
+                        setResendLoading(false);
+                      }
+                    }}
+                    className="flex gap-2"
+                  >
+                    <button
+                      type="submit"
+                      disabled={resendLoading || !formData.email.trim()}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-lg text-xs transition-all disabled:opacity-50 flex items-center gap-2 shrink-0"
+                    >
+                      {resendLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        'Resend Link'
+                      )}
+                    </button>
+                  </form>
                 </div>
               )}
 

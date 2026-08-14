@@ -114,7 +114,17 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const user = await this.usersService.findByEmail(loginDto.email);
-    if (!user || !user.isActive) {
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email address before signing in. Check your inbox for the activation link.',
+      );
+    }
+
+    if (!user.isActive) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
