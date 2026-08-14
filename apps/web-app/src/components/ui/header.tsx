@@ -55,7 +55,7 @@ export default function Header() {
       .getProducts({ search: trimmed })
       .then((data) => {
         if (isMounted) {
-          setSearchResults(data || []);
+          setSearchResults(Array.isArray(data) ? data : []);
           setSearchError(null);
         }
       })

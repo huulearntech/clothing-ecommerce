@@ -54,7 +54,7 @@ export const catalogService = {
   },
 
   // Products
-  createProduct: async (payload: Partial<Product>): Promise<Product> => {
+  createProduct: async (payload: CreateProductPayload | Partial<Product>): Promise<Product> => {
     const { data } = await apiClient.post<Product>(
       '/catalog/products',
       payload,

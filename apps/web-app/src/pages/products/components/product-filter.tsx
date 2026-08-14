@@ -1,4 +1,4 @@
-import { Search, X, SlidersHorizontal, ArrowUpDown, Check, ChevronDown } from "lucide-react";
+import { Search, X, SlidersHorizontal, ArrowUpDown, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

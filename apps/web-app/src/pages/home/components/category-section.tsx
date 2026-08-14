@@ -53,7 +53,7 @@ export default function CategorySection() {
     catalogService
       .getCategories()
       .then((data) => {
-        if (data) {
+        if (Array.isArray(data)) {
           setCategories(data);
         }
       })
@@ -65,21 +65,24 @@ export default function CategorySection() {
       });
   }, []);
 
-  const displayCategories = categories.map((cat, idx) => {
-    const fallbackMeta = FALLBACK_CATEGORIES[idx % FALLBACK_CATEGORIES.length];
-    return {
-      id: cat.id || cat.slug || fallbackMeta.id,
-      title: cat.name,
-      description: `Collection of ${cat.name}`,
-      subtypes: cat.children?.map((c) => c.name) || [],
-      itemCount: `${cat.children?.length || 0} Subcategories`,
-      badge: "Collection",
-      icon: fallbackMeta.icon,
-      bgGradient: fallbackMeta.bgGradient,
-      borderColor: fallbackMeta.borderColor,
-      image: fallbackMeta.image,
-    };
-  });
+  const displayCategories =
+    Array.isArray(categories) && categories.length > 0
+      ? categories.map((cat, idx) => {
+          const fallbackMeta = FALLBACK_CATEGORIES[idx % FALLBACK_CATEGORIES.length];
+          return {
+            id: cat.id || cat.slug || fallbackMeta.id,
+            title: cat.name,
+            description: `Collection of ${cat.name}`,
+            subtypes: cat.children?.map((c) => c.name) || [],
+            itemCount: `${cat.children?.length || 0} Subcategories`,
+            badge: "Collection",
+            icon: fallbackMeta.icon,
+            bgGradient: fallbackMeta.bgGradient,
+            borderColor: fallbackMeta.borderColor,
+            image: fallbackMeta.image,
+          };
+        })
+      : FALLBACK_CATEGORIES;
 
   return (
     <section

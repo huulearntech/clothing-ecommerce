@@ -35,7 +35,7 @@ export default function FeaturedProducts() {
     catalogService
       .getProducts()
       .then((serverProducts: ServerProduct[]) => {
-        if (serverProducts) {
+        if (Array.isArray(serverProducts)) {
           const mapped: ProductUI[] = serverProducts.slice(0, 4).map((p, idx) => ({
             id: p.id,
             variantId: p.variants?.[0]?.id,
@@ -94,7 +94,7 @@ export default function FeaturedProducts() {
   });
 
   const filteredProducts = products.filter((p) => {
-    if (selectedFilter === "All") return true;
+    if (selectedFilter === "All" || selectedFilter === "All Items") return true;
     return (
       p.category.toLowerCase().includes(selectedFilter.toLowerCase()) ||
       p.subtype.toLowerCase().includes(selectedFilter.toLowerCase())

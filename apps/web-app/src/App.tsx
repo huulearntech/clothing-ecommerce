@@ -31,7 +31,6 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <Home />,
-    errorElement: <div>404</div>
   },
   {
     path: '/auth',
@@ -123,6 +122,25 @@ const router = createBrowserRouter([
         element: <AdminVouchersPage />,
       },
     ],
+  },
+  {
+    path: '*',
+    element: (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-5xl font-extrabold text-slate-900 dark:text-white mb-2">404</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+            The page you are looking for does not exist or has been moved.
+          </p>
+          <a
+            href="/"
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all inline-block"
+          >
+            Back to Homepage
+          </a>
+        </div>
+      </div>
+    ),
   },
 ]);
 

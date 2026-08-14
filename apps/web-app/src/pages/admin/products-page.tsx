@@ -66,6 +66,7 @@ export default function AdminProductsPage() {
       <div className="max-w-7xl mx-auto">
         <ProductManagement
           products={products}
+          isLoading={isLoading}
           onAddProduct={() => {
             setSelectedProduct(null);
             setIsModalOpen(true);

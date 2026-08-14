@@ -11,7 +11,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 
 interface WishlistItemUI {
   id: string;
-  productId: string;
+  productId?: string;
   variantId?: string;
   name: string;
   category: string;

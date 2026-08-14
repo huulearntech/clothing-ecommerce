@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Plus, Search, Filter, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Filter, Edit, Trash2, Loader2 } from "lucide-react";
 import type { Product } from "../../../services/types";
 
 interface ProductManagementProps {
   products: Product[];
+  isLoading?: boolean;
   onAddProduct: () => void;
   onEditProduct: (product: Product) => void;
   onDeleteProduct: (id: string) => void;
@@ -11,6 +12,7 @@ interface ProductManagementProps {
 
 export default function ProductManagement({
   products,
+  isLoading = false,
   onAddProduct,
   onEditProduct,
   onDeleteProduct,
@@ -88,7 +90,16 @@ export default function ProductManagement({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-xs text-slate-400">
+                  <div className="inline-flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                    Loading products inventory...
+                  </div>
+                </td>
+              </tr>
+            ) : filteredProducts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-xs text-slate-400">
                   No products match your search or filter.

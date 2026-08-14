@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Package,
@@ -77,7 +77,6 @@ const STATUS_CONFIG: Record<
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
