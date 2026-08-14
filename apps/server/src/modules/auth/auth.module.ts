@@ -7,9 +7,12 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { GuestOnlyGuard } from './guards/guest-only.guard';
 
+import { MailModule } from '../mail/mail.module';
+
 @Module({
   imports: [
     UsersModule,
+    MailModule,
     JwtModule.register({
       global: false,
       secret: process.env.JWT_SECRET || 'super-secret-jwt-key',

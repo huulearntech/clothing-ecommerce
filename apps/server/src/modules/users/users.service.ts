@@ -38,6 +38,12 @@ export class UsersService {
     });
   }
 
+  async findByVerificationToken(verificationToken: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { verificationToken },
+    });
+  }
+
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
       relations: { addresses: true, profile: true },

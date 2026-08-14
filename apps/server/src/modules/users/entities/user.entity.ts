@@ -33,8 +33,17 @@ export class User {
   @Column({ type: 'varchar', default: UserRole.CUSTOMER })
   role: UserRole;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', default: false })
   isActive: boolean;
+
+  @Column({ name: 'is_email_verified', default: false })
+  isEmailVerified: boolean;
+
+  @Column({ name: 'verification_token', type: 'varchar', nullable: true })
+  verificationToken?: string | null;
+
+  @Column({ name: 'verification_token_expires_at', type: 'timestamp', nullable: true })
+  verificationTokenExpiresAt?: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

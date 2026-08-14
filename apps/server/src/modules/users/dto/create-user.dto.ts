@@ -28,4 +28,16 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsOptional()
+  isEmailVerified?: boolean;
+
+  @IsOptional()
+  verificationToken?: string | null;
+
+  @IsOptional()
+  verificationTokenExpiresAt?: Date | null;
 }

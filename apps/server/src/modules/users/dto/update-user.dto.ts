@@ -33,6 +33,17 @@ export class UpdateUserDto {
   isActive?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  isEmailVerified?: boolean;
+
+  @IsOptional()
+  @IsString()
+  verificationToken?: string | null;
+
+  @IsOptional()
+  verificationTokenExpiresAt?: Date | null;
+
+  @IsOptional()
   @IsString()
   passwordHash?: string;
 }

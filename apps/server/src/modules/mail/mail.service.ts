@@ -97,4 +97,26 @@ export class MailService {
       `Order confirmation email sent successfully to ${recipientEmail} for order ${order.orderNumber}`,
     );
   }
+
+  async sendActivationEmail(
+    toEmail: string,
+    customerName: string,
+    token: string,
+  ): Promise<void> {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const activationUrl = `${frontendUrl}/verify-email?token=${token}`;
+
+    await this.mailProvider.sendTemplateEmail({
+      to: toEmail,
+      subject: 'Activate Your Account',
+      template: 'activation-email',
+      context: {
+        customerName: customerName || 'Valued Customer',
+        activationUrl,
+        year: new Date().getFullYear(),
+      },
+    });
+
+    this.logger.log(`Activation email sent successfully to ${toEmail}`);
+  }
 }

@@ -10,6 +10,7 @@ import CheckoutPage from './pages/checkout';
 import AccountPage from './pages/account';
 import OrderDetailPage from './pages/order_detail';
 import AuthPage from './pages/auth';
+import VerifyEmailPage from './pages/verify-email';
 import AdminDashboardRoot from './pages/admin/admin-root';
 import AdminOverviewPage from './pages/admin/overview-page';
 import AdminProductsPage from './pages/admin/products-page';
@@ -37,6 +38,14 @@ const router = createBrowserRouter([
     element: (
       <GuestGuard>
         <AuthPage />
+      </GuestGuard>
+    ),
+  },
+  {
+    path: '/verify-email',
+    element: (
+      <GuestGuard>
+        <VerifyEmailPage />
       </GuestGuard>
     ),
   },

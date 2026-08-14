@@ -20,7 +20,7 @@ export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
     private readonly outboxService: OutboxService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     await this.startConsumer();
@@ -37,10 +37,12 @@ export class RabbitMQConsumerService implements OnModuleInit, OnModuleDestroy {
     );
 
     // Configurable prefetch limit to avoid consumer out-of-memory (default to 10)
-    const prefetchLimit = this.configService.get<number>(
+    const rawLimit = this.configService.get<string | number>(
       'RABBITMQ_PREFETCH_LIMIT',
       10,
     );
+    const parsedLimit = Number(rawLimit);
+    const prefetchLimit = !isNaN(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10;
 
     try {
       this.connection = await amqp.connect(amqpUrl);

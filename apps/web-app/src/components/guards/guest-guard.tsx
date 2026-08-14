@@ -8,10 +8,11 @@ interface GuestGuardProps {
 
 export default function GuestGuard({
   children,
-  redirectTo = '/account',
 }: GuestGuardProps) {
   if (authService.isAuthenticated()) {
-    return <Navigate to={redirectTo} replace />;
+    const user = authService.getCurrentUser();
+    const target = user?.role?.toUpperCase() === 'ADMIN' ? '/admin' : '/';
+    return <Navigate to={target} replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

@@ -174,6 +174,18 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
+export interface VerifyEmailPayload {
+  token: string;
+}
+
+export interface ResendVerificationPayload {
+  email: string;
+}
+
 
 export interface CreateAddressPayload {
   addressType: AddressType;

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activate Your Account</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      color: #333333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 30px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .header {
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 30px 24px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .body {
+      padding: 36px 28px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 16px;
+    }
+    .text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #475569;
+      margin-bottom: 28px;
+    }
+    .btn-container {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .btn-activate {
+      display: inline-block;
+      background-color: #4f46e5;
+      color: #ffffff !important;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .btn-activate:hover {
+      background-color: #4338ca;
+    }
+    .note {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.5;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      margin-top: 32px;
+    }
+    .footer {
+      background-color: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 16px;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .link-fallback {
+      word-break: break-all;
+      color: #4f46e5;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>Account Activation</h1>
+    </div>
+    <div class="body">
+      <div class="greeting">Hello {{customerName}},</div>
+      <p class="text">
+        Thank you for creating an account with us! To complete your registration and activate your account, please click the button below:
+      </p>
+      
+      <div class="btn-container">
+        <a href="{{activationUrl}}" class="btn-activate" target="_blank">Activate My Account</a>
+      </div>
+
+      <p class="text">
+        This link will expire in 24 hours. If you did not create an account, you can safely ignore this email.
+      </p>
+
+      <div class="note">
+        If the button above does not work, copy and paste the following link into your browser:<br>
+        <a href="{{activationUrl}}" class="link-fallback">{{activationUrl}}</a>
+      </div>
+    </div>
+    <div class="footer">
+      &copy; {{year}} E-Commerce Shop. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

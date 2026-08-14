@@ -66,12 +66,25 @@ export class MailgunService implements IMailProvider {
   ): string {
     let compiled = this.templateCache.get(templateName);
     if (!compiled) {
-      const templatePath = path.join(
+      let templatePath = path.join(
         __dirname,
         '..',
         'templates',
         `${templateName}.hbs`,
       );
+      if (!fs.existsSync(templatePath)) {
+        const srcTemplatePath = path.join(
+          process.cwd(),
+          'src',
+          'modules',
+          'mail',
+          'templates',
+          `${templateName}.hbs`,
+        );
+        if (fs.existsSync(srcTemplatePath)) {
+          templatePath = srcTemplatePath;
+        }
+      }
       const templateSource = fs.readFileSync(templatePath, 'utf8');
       compiled = handlebars.compile(templateSource);
       this.templateCache.set(templateName, compiled);

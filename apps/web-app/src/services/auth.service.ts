@@ -2,8 +2,11 @@ import { apiClient } from './api';
 import type {
   AuthResponse,
   LoginPayload,
+  MessageResponse,
   RegisterPayload,
+  ResendVerificationPayload,
   User,
+  VerifyEmailPayload,
 } from './types';
 
 const TOKEN_KEY = 'access_token';
@@ -16,9 +19,18 @@ export const authService = {
     return data;
   },
 
-  register: async (payload: RegisterPayload): Promise<AuthResponse> => {
-    const { data } = await apiClient.post<AuthResponse>('/auth/register', payload);
-    authService.setSession(data.accessToken, data.user);
+  register: async (payload: RegisterPayload): Promise<MessageResponse> => {
+    const { data } = await apiClient.post<MessageResponse>('/auth/register', payload);
+    return data;
+  },
+
+  verifyEmail: async (payload: VerifyEmailPayload): Promise<MessageResponse> => {
+    const { data } = await apiClient.post<MessageResponse>('/auth/verify-email', payload);
+    return data;
+  },
+
+  resendVerification: async (payload: ResendVerificationPayload): Promise<MessageResponse> => {
+    const { data } = await apiClient.post<MessageResponse>('/auth/resend-verification', payload);
     return data;
   },
 

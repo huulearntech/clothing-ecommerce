@@ -15,6 +15,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [registeredSuccessMsg, setRegisteredSuccessMsg] = useState<string | null>(null);
+  const [registeredEmail, setRegisteredEmail] = useState<string>('');
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -39,24 +41,32 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        await authService.login({
+        const authData = await authService.login({
           email: formData.email.trim(),
           password: formData.password,
         });
-        navigate("/account");
+        if (authData.user?.role?.toUpperCase() === 'ADMIN') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
       } else {
         // Handle Sign Up
         const nameParts = formData.fullName.trim().split(" ");
         const firstName = nameParts[0] || "Customer";
         const lastName = nameParts.slice(1).join(" ") || "User";
 
-        await authService.register({
+        const res = await authService.register({
           email: formData.email.trim(),
           password: formData.password,
           firstName,
           lastName,
         });
-        navigate("/account");
+        setRegisteredEmail(formData.email.trim());
+        setRegisteredSuccessMsg(
+          res.message || "Registration successful! Please check your email to activate your account."
+        );
+        setIsLogin(true);
       }
     } catch (err: any) {
       console.error("Auth error:", err);
@@ -222,6 +232,21 @@ export default function AuthPage() {
 
             {/* Main Auth Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {registeredSuccessMsg && (
+                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-sm mb-1">Registration Complete!</p>
+                    <p className="leading-relaxed">{registeredSuccessMsg}</p>
+                    {registeredEmail && (
+                      <p className="mt-2 text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
+                        Sent to: <span className="underline">{registeredEmail}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {errorMsg && (
                 <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />

@@ -19,4 +19,4 @@ import { RabbitMQConsumerService } from './rabbitmq-consumer.service';
   ],
   exports: [MailService],
 })
-export class MailModule {}
+export class MailModule { }
